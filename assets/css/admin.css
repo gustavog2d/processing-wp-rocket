@@ -1,0 +1,15 @@
+.pwr-row-actions .button { margin-right: 6px; }
+.pwr-row-actions .is-busy { opacity: .6; cursor: wait; }
+.pwr-badge{display:inline-block;padding:2px 6px;border-radius:10px;font-size:11px;line-height:1;border:1px solid #ccd0d4;background:#f6f7f7}
+.pwr-status-in_progress{background:#fff3cd;border-color:#ffeeba}
+.pwr-status-done{background:#d4edda;border-color:#c3e6cb}
+.pwr-status-failed{background:#f8d7da;border-color:#f5c6cb}
+
+/* Status colors */
+.pwr-status-completed{background:#d4edda;border-color:#c3e6cb}
+.pwr-status-pending{background:#fff3cd;border-color:#ffeeba}
+.pwr-status-in_progress{background:#e0e7ff;border-color:#c7d2fe}
+.pwr-status-failed{background:#f8d7da;border-color:#f5c6cb}
+
+.pwr-statusblock{min-width:120px}
+.pwr-date{opacity:.8}
