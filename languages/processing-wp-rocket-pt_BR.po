@@ -1,0 +1,79 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: processing-wp-rocket 1.4.7\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-08-25 00:00+0000\n"
+"PO-Revision-Date: 2025-08-25 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: pt_BR\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: processing-wp-rocket\n"
+
+msgid "Processing WP Rocket"
+msgstr "Processamento WP Rocket"
+
+msgid "You do not have permission to access this page."
+msgstr "Você não tem permissão para acessar esta página."
+
+msgid "Filter by status"
+msgstr "Filtrar por status"
+
+msgid "All statuses"
+msgstr "Todos os status"
+
+msgid "Search URL"
+msgstr "Pesquisar URL"
+
+msgid "Filter"
+msgstr "Filtrar"
+
+msgid "PWR Debug:"
+msgstr "PWR Depuração:"
+
+msgid "URL"
+msgstr "URL"
+
+msgid "[cache]"
+msgstr "[cache]"
+
+msgid "[css] [desktop]"
+msgstr "[css] [desktop]"
+
+msgid "[css] [mobile]"
+msgstr "[css] [mobile]"
+
+msgid "[lazy] [desktop]"
+msgstr "[lazy] [desktop]"
+
+msgid "[lazy] [mobile]"
+msgstr "[lazy] [mobile]"
+
+msgid "[priority] [desktop]"
+msgstr "[prioridade] [desktop]"
+
+msgid "[priority] [mobile]"
+msgstr "[prioridade] [mobile]"
+
+msgid "Last Update (any)"
+msgstr "Última atualização (qualquer)"
+
+msgid "Actions"
+msgstr "Ações"
+
+msgid "PageSpeed"
+msgstr "PageSpeed"
+
+msgid "Pending"
+msgstr "Pendente"
+
+msgid "In Progress"
+msgstr "Em andamento"
+
+msgid "Completed"
+msgstr "Concluído"
+
+msgid "Failed"
+msgstr "Falhou"

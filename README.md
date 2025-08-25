@@ -1,86 +1,113 @@
-# Log Processamento de cache / WP-Rocket
+# Processing WP Rocket
 
-**Versão:** 1.0.0  
-**Autor:** Gustavo Henrique  
-**Requer pelo menos:** WordPress 6.0  
-**Requer PHP:** 7.4 ou superior  
-**Licença:** GPLv2 ou posterior  
-**Text Domain:** processing-wp-rocket
+[![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759B.svg)]() [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4.svg)]() [![License: GPL v2](https://img.shields.io/badge/License-GPL_v2%2B-blue.svg)]()
 
----
+A diagnostic companion for **WP Rocket** that visualizes processing information from WP Rocket’s internal database tables.
 
-## 📌 Descrição
-
-Este plugin exibe um log detalhado sobre o status de processamento de cache do [WP Rocket](https://wp-rocket.me/).  
-Ele **não é um plugin oficial do WP Rocket**, mas foi desenvolvido para trabalhar junto com ele, fornecendo uma visão consolidada das tabelas internas usadas no processo de cache.
-
-Permite identificar rapidamente URLs com falhas de processamento, status pendentes e informações adicionais para diagnóstico.
+> **Heads‑up:** This is **not** an official WP Rocket plugin. It does not replace or modify WP Rocket behavior; it only **reads and displays** information in the WordPress admin.
 
 ---
 
-## 🖼 Exemplo de visualização
+## ✨ Highlights (v2.0.0)
 
-![Exemplo de tela do plugin](assets/screenshot-1.png)
-
-> O exemplo acima mostra a listagem com colunas de status, cores de identificação e links diretos para as URLs.
-
----
-
-## ⚙️ Funcionalidades
-
-- Leitura das tabelas internas do WP Rocket (`wpr_rocket_cache`, `wpr_rucss_used_css`, `wpr_lazy_render_content`, `wpr_above_the_fold`).
-- Exibição consolidada em tabela única no painel administrativo.
-- Identificação visual por status (cores diferentes para sucesso, erro, pendente, etc.).
-- Links diretos para cada URL processada.
-- Totalmente independente do WP Rocket (nenhuma modificação é feita nas tabelas originais).
+- **Unified table view** with search and filters  
+- **Status badges** (Pending, In Progress, Completed, Failed) with colors  
+- **Status + date** in the same cell (date adjusted to your **WordPress timezone**)  
+- **Cache status unified** (no desktop/mobile split)  
+- **PageSpeed Insights** button for each URL  
+- **i18n-ready** (English default) and **pt_BR** translation included
 
 ---
 
-## 📥 Instalação
+## 🔎 What it reads
 
-1. Baixe o arquivo `.zip` do plugin.
-2. No painel do WordPress, vá em **Plugins > Adicionar novo > Enviar plugin**.
-3. Faça upload do arquivo `.zip` e clique em **Ativar**.
-4. O menu **WP Rocket Log** será adicionado no painel lateral do WordPress.
+From WP Rocket tables (auto‑detected):
+- `wpr_rocket_cache`
+- `wpr_rucss_used_css`
+- `wpr_lazy_render_content`
+- `wpr_above_the_fold`
 
----
-
-## 🚀 Como usar
-
-1. Com o WP Rocket ativo no site, acesse o menu **Log WP-Rocket** no painel.
-2. A tabela exibirá as URLs processadas pelo WP Rocket, com status e datas.
-3. Clique no link de qualquer URL para abrir a página correspondente.
+The plugin aggregates data **by canonical URL** (scheme + host + path), showing per‑layer status (cache, Used CSS, lazy, priority elements).
 
 ---
 
-## 📄 Notas importantes
+## ✅ Requirements
 
-- Este plugin **não altera** nem remove dados do WP Rocket — apenas lê as informações já existentes.
-- O desempenho da listagem depende do volume de dados nas tabelas do WP Rocket.  
-  Para instalações com milhares de registros, pode ser necessário limitar o número de resultados.
-- É recomendável manter o WP Rocket sempre atualizado para compatibilidade.
-
----
-
-## 🔒 Segurança e Boas Práticas
-
-- Apenas usuários com permissão de administrador (`manage_options`) podem acessar a página.
-- Todas as URLs e classes CSS são devidamente escapadas para evitar vulnerabilidades XSS.
-- Não há execução de queries dinâmicas sem sanitização.
+- WordPress **6.0+**
+- PHP **7.4+**
+- **WP Rocket** active (for data to be available)
 
 ---
 
-## 🛠 Compatibilidade
+## 📦 Installation
 
-- **WordPress:** 6.0 ou superior  
-- **PHP:** 7.4 ou superior  
-- Compatível com o **WP Rocket 3.14+** (pode funcionar em versões anteriores, mas não testado)
+1. Download the plugin ZIP from the releases or build it locally.  
+2. In **WordPress Admin → Plugins → Add New → Upload Plugin**, upload the ZIP.  
+3. Activate. You’ll see **Processing WP Rocket** in the admin menu.
+
+---
+
+## 🧭 Usage
+
+1. Keep **WP Rocket** active.  
+2. Go to **Tools → Processing WP Rocket**.  
+3. Browse the table: each cell shows **status** (color) and **last update date** for that layer/device.  
+4. Use the **PageSpeed** button to open a quick test for the URL.
+
+> Notes
+> - The plugin **does not** clear caches or change WP Rocket settings.  
+> - For large sites, use the search/filter UI to reduce result sets.
 
 ---
 
-## 📜 Licença
+## 🌐 Internationalization
 
-Este plugin é distribuído sob a licença GPLv2 ou posterior.  
-Você pode usá-lo e modificá-lo livremente, desde que mantenha o crédito ao autor.
+- Default strings in **English**.  
+- Included translation: **Português (Brasil)** `pt_BR`.  
+- Text domain: `processing-wp-rocket`.  
+- WordPress will load the translation automatically according to **Settings → General → Site Language**.
 
 ---
+
+## 🧩 Developer Notes
+
+- Admin table built with `WP_List_Table`.  
+- Dates rendered with `wp_date()` and `wp_timezone()` to respect the site timezone.  
+- Status normalization maps common synonyms to: `pending`, `in_progress`, `completed`, `failed`.
+
+### Filters
+
+- `pwr_status_labels` — customize status labels displayed on badges.  
+- `pwr_datetime_format` — change date format (default `Y-m-d H:i:s`).  
+- `pwr_tables` — override/extend which WP Rocket tables are scanned.  
+- `pwr_min_capability` — adjust capability needed to access the screen (default `manage_options`).
+
+---
+
+## 🖼 Visualization example
+
+![Example plugin screenshot](assets/screenshot-1.png)
+
+> The example above shows the listing with status columns, identification colors and direct links to the URLs.
+
+---
+
+## 🚀 Changelog (excerpt)
+
+### 2.0.0
+- Unified **cache** status (no desktop/mobile).  
+- Timezone‑aware date rendering.  
+- i18n support with **pt_BR** translation.  
+- Removed purge/clear buttons; kept only **PageSpeed**.  
+- UI cleanup & stability improvements.
+
+### 1.0.0
+- Initial release with admin table of WP Rocket processing info.
+
+Full changelog lives in [`readme.txt`](./readme.txt) (WordPress.org format).
+
+---
+
+## 📄 License
+
+GNU General Public License v2.0 or later. See [`LICENSE`](./LICENSE) or the header in the main plugin file.
