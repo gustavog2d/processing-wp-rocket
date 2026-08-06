@@ -14,7 +14,7 @@
  * Domain Path:       /languages
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
-define( 'PWR_VERSION', '1.5.0' );
+define( 'PWR_VERSION', '2.0.0' );
 define( 'PWR_FILE', __FILE__ );
 define( 'PWR_DIR', plugin_dir_path( __FILE__ ) );
 define( 'PWR_URL', plugin_dir_url( __FILE__ ) );

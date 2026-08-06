@@ -3,7 +3,7 @@ Contributors: gustavog2d
 Donate link: https://github.com/gustavog2d/processing-wp-rocket
 Tags: cache, performance, logs, wp-rocket
 Requires at least: 6.0
-Tested up to: 6.6
+Tested up to: 7.0
 Requires PHP: 7.4
 Stable tag: 2.0.0
 License: GPLv2 or later

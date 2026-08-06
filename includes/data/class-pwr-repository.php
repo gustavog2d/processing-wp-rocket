@@ -141,7 +141,7 @@ class PWR_Repository {
         if ( in_array( $v, [ 'in progress','in-progress','processing','in_process','processando','em processamento','queued','queue' ], true ) ) return 'in_progress';
         if ( in_array( $v, [ 'done','completed','complete','ok','sucesso','success' ], true ) ) return 'completed';
         if ( in_array( $v, [ 'fail','failed','erro','error' ], true ) ) return 'failed';
-        if ( in_array( $v, [ 'pending','aguardando','pendente' ], true ) ) return 'pending';
+        if ( in_array( $v, [ 'pending','to-submit','to_submit','aguardando','pendente' ], true ) ) return 'pending';
         return $v;
     }
     private static function adjust_datetime( $val ) {
