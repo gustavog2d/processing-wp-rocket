@@ -13,7 +13,7 @@ class PWR_List_Table extends WP_List_Table {
             'plural'   => 'pwr_urls',
             'ajax'     => false,
         ] );
-        $this->args = wp_parse_args( $args, [ 'status' => '', 'search' => '', 'per_page' => 20 ] );
+        $this->args = wp_parse_args( $args, [ 'status' => '', 'search' => '', 'search_mode' => 'contains', 'per_page' => 20 ] );
     }
 
     public function get_columns() {
@@ -126,12 +126,13 @@ class PWR_List_Table extends WP_List_Table {
         $order    = isset( $_GET['order'] ) ? sanitize_text_field( wp_unslash( $_GET['order'] ) ) : 'desc';
 
         $data  = PWR_Repository::query_items( [
-            'status'  => $this->args['status'],
-            'search'  => $this->args['search'],
-            'orderby' => $order_by,
-            'order'   => $order,
-            'paged'   => $paged,
-            'per_page'=> $per_page,
+            'status'      => $this->args['status'],
+            'search'      => $this->args['search'],
+            'search_mode' => $this->args['search_mode'],
+            'orderby'     => $order_by,
+            'order'       => $order,
+            'paged'       => $paged,
+            'per_page'    => $per_page,
         ] );
 
         $this->items = $data['items'];

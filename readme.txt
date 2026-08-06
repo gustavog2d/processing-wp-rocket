@@ -5,7 +5,7 @@ Tags: cache, performance, logs, wp-rocket
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,7 +26,9 @@ It simply reads WP Rocket’s internal tables and displays their status in the W
   * `wpr_rucss_used_css`
   * `wpr_lazy_render_content`
   * `wpr_above_the_fold`
-* Unified admin table view with search and filters.
+* Unified admin table view with search and filters, including an exact-match toggle.
+* Site Health panel with per-layer status percentages across the whole site.
+* Cron Status panel showing WP Rocket's WP-Cron hooks and Action Scheduler queue activity.
 * Status badges: Pending, In Progress, Completed, Failed.
 * Statuses include date/time of last update (adjusted to your WordPress timezone).
 * PageSpeed Insights button for each URL.
@@ -57,6 +59,11 @@ The plugin only runs in the WordPress admin. It does not affect your frontend pe
 
 == Changelog ==
 
+= 2.1.0 =
+* Added an exact match search toggle, for finding a single URL (e.g. the home page) without substring noise.
+* Added a Site Health panel with per-layer status percentages across the whole site.
+* Added a Cron Status panel combining native WP-Cron and Action Scheduler data specific to WP Rocket.
+
 = 2.0.0 =
 * Unified cache status (no desktop/mobile split).
 * Timezone-aware date formatting based on WordPress settings.
@@ -69,6 +76,9 @@ The plugin only runs in the WordPress admin. It does not affect your frontend pe
 * Displayed raw WP Rocket processing logs in admin.
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+Adds Site Health and Cron Status panels, plus exact-match search. No breaking changes.
 
 = 2.0.0 =
 Major update with translation support, timezone-aware dates, and cleaner UI.  

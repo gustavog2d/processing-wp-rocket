@@ -13,3 +13,15 @@
 
 .pwr-statusblock{min-width:120px}
 .pwr-date{opacity:.8}
+
+.pwr-panel{margin:16px 0;padding:12px 16px;background:#fff;border:1px solid #ccd0d4;box-shadow:0 1px 1px rgba(0,0,0,.04)}
+.pwr-panel h2{display:flex;align-items:center;gap:10px;font-size:14px}
+.pwr-panel h3{margin:14px 0 6px;font-size:13px}
+.pwr-refresh-link{font-size:12px;font-weight:400}
+.pwr-health-table{margin-top:8px}
+.pwr-health-table td,.pwr-health-table th{padding:6px 10px}
+.pwr-health-count{opacity:.6;font-size:11px}
+.pwr-cron-list{margin:0;padding-left:0;list-style:none}
+.pwr-cron-list li{padding:4px 0;border-bottom:1px solid #f0f0f1}
+.pwr-cron-tally{opacity:.7;font-size:11px}
+.pwr-note{color:#646970}
