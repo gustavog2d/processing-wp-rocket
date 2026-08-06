@@ -8,9 +8,11 @@ A diagnostic companion for **WP Rocket** that visualizes processing information 
 
 ---
 
-## ✨ Highlights (v2.0.0)
+## ✨ Highlights
 
-- **Unified table view** with search and filters  
+- **Unified table view** with search and filters, including an **exact match** toggle for finding a single URL (e.g. the home page) without substring noise
+- **Site Health panel** at the top of the screen showing the percentage of URLs Pending/In Progress/Completed/Failed for each layer (cache, RUCSS, lazy render, priority elements)
+- **Cron Status panel** showing WP Rocket's native WP-Cron hooks (next run, overdue flag) and Action Scheduler queue activity (last run, success/failure), so you don't need a separate generic cron-monitoring plugin
 - **Status badges** (Pending, In Progress, Completed, Failed) with colors  
 - **Status + date** in the same cell (date adjusted to your **WordPress timezone**)  
 - **Cache status unified** (no desktop/mobile split)  
@@ -81,6 +83,13 @@ The plugin aggregates data **by canonical URL** (scheme + host + path), showing 
 - `pwr_datetime_format` — change date format (default `Y-m-d H:i:s`).  
 - `pwr_tables` — override/extend which WP Rocket tables are scanned.  
 - `pwr_min_capability` — adjust capability needed to access the screen (default `manage_options`).
+- `pwr_table_per_page` — rows per page in the admin list table (default `20`).
+- `pwr_repository_items` — short-circuit the table scan entirely with custom `items`/`total` data (list table only; the Site Health panel always reads the tables live).
+- `pwr_health_cache_ttl` — cache lifetime in seconds for the Site Health panel (default `5 * MINUTE_IN_SECONDS`).
+- `pwr_health_field_labels` — customize the per-layer labels shown in the Site Health panel.
+- `pwr_cron_cache_ttl` — cache lifetime in seconds for the Cron Status panel (default `5 * MINUTE_IN_SECONDS`).
+- `pwr_cron_hook_pattern` — substring used to auto-detect WP Rocket's cron hooks and Action Scheduler actions (default `rocket`).
+- `pwr_cron_actions_limit` — how many recent Action Scheduler actions to consider when computing the success/failure rollup (default `50`).
 
 ---
 
@@ -93,6 +102,11 @@ The plugin aggregates data **by canonical URL** (scheme + host + path), showing 
 ---
 
 ## 🚀 Changelog (excerpt)
+
+### 2.1.0
+- Added an **exact match** search toggle, for finding a single URL (e.g. the home page) without substring noise.
+- Added a **Site Health** panel with per-layer status percentages across the whole site.
+- Added a **Cron Status** panel combining native WP-Cron and Action Scheduler data specific to WP Rocket.
 
 ### 2.0.0
 - Unified **cache** status (no desktop/mobile).  

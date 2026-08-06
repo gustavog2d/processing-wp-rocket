@@ -11,6 +11,7 @@ class PWR_Plugin {
         require_once PWR_DIR . 'includes/admin/class-pwr-list-table.php';
         require_once PWR_DIR . 'includes/data/class-pwr-repository.php';
         require_once PWR_DIR . 'includes/integration/class-pwr-wprocket-adapter.php';
+        require_once PWR_DIR . 'includes/integration/class-pwr-cron-status.php';
         require_once PWR_DIR . 'includes/rest/class-pwr-rest.php';
         add_action( 'admin_menu', [ $this, 'register_menu' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin' ] );

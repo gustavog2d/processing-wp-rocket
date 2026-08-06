@@ -15,16 +15,55 @@ class PWR_Repository {
 	 * aggregating Desktop/Mobile statuses for layers: cache, rucss, lazy, priority.
 	 */
 	public static function query_items( $args ) {
-		global $wpdb;
-		$defaults = [ 'status'=>'', 'search'=>'', 'orderby'=>'updated', 'order'=>'desc', 'paged'=>1, 'per_page'=>20 ];
+		$defaults = [ 'status'=>'', 'search'=>'', 'search_mode'=>'contains', 'orderby'=>'updated', 'order'=>'desc', 'paged'=>1, 'per_page'=>20 ];
 		$args = wp_parse_args( $args, $defaults );
 		$override = apply_filters( 'pwr_repository_items', null, $args );
 		if ( is_array( $override ) && isset( $override['items'], $override['total'] ) ) { return $override; }
+		$built  = self::build_groups( $args );
+		$groups = $built['groups'];
+		$debug  = $built['debug'];
+		$list = []; $filter = (string)$args['status'];
+		foreach ( $groups as $g ) {
+			if ( $filter ) {
+				$has=false; foreach (['cache','rucss_desktop','rucss_mobile','lazy_desktop','lazy_mobile','priority_desktop','priority_mobile'] as $fld) { if ( isset($g[$fld]) && $g[$fld]===$filter ) { $has=true; break; } }
+				if ( ! $has ) continue;
+			}
+			$list[] = array_merge([
+            'cache_desktop_updated' => isset($g['cache_desktop_updated']) ? $g['cache_desktop_updated'] : '',
+            'cache_mobile_updated'  => isset($g['cache_mobile_updated']) ? $g['cache_mobile_updated'] : '',
+            'rucss_desktop_updated' => isset($g['rucss_desktop_updated']) ? $g['rucss_desktop_updated'] : '',
+            'rucss_mobile_updated'  => isset($g['rucss_mobile_updated']) ? $g['rucss_mobile_updated'] : '',
+            'lazy_desktop_updated'  => isset($g['lazy_desktop_updated']) ? $g['lazy_desktop_updated'] : '',
+            'lazy_mobile_updated'   => isset($g['lazy_mobile_updated']) ? $g['lazy_mobile_updated'] : '',
+            'priority_desktop_updated' => isset($g['priority_desktop_updated']) ? $g['priority_desktop_updated'] : '',
+            'priority_mobile_updated'  => isset($g['priority_mobile_updated']) ? $g['priority_mobile_updated'] : '',
+        ], $g);
+		}
+		$orderby = in_array( $args['orderby'], [ 'url','updated' ], true ) ? $args['orderby'] : 'updated';
+		usort( $list, function( $a, $b ) use ( $orderby, $args ) {
+			$ord = strtolower( $args['order'] ) === 'asc' ? 1 : -1;
+			$va = $a[ $orderby ] ?? ''; $vb = $b[ $orderby ] ?? '';
+			if ( $orderby === 'updated' ) { return ( strtotime( $va ) <=> strtotime( $vb ) ) * $ord; }
+			return ( $va <=> $vb ) * $ord;
+		});
+		$total = count($list); $per=(int)$args['per_page']; $off=max(0,((int)$args['paged']-1)*$per);
+		$items = array_slice($list,$off,$per);
+		if ( isset($_GET['pwr_debug']) && current_user_can( pwr_min_cap() ) ) { return [ 'items'=>$items, 'total'=>$total, 'debug'=>$debug ]; }
+		return [ 'items'=>$items, 'total'=>$total ];
+	}
+	/**
+	 * Scan candidate WP Rocket tables and group raw rows by canonical URL.
+	 * Shared by query_items() (paginated/filtered) and get_health_report() (whole-site, unfiltered).
+	 */
+	private static function build_groups( array $args ) {
+		global $wpdb;
 		$candidates = apply_filters( 'pwr_tables', [ 'wpr_rucss_used_css','wpr_rocket_cache','wpr_lazy_render_content','wpr_above_the_fold' ] );
 		$url_cols     = [ 'url','page_url','permalink','path','source','request_uri' ];
 		$status_cols  = [ 'status','state','processing_status','result','flag' ];
 		$updated_cols = [ 'updated','updated_at','last_update','last_updated','last_modified','modified','date','timestamp','created_at' ];
 		$device_cols  = [ 'device','context','form_factor','platform','is_mobile','ua','client' ];
+		$search      = isset( $args['search'] ) ? (string) $args['search'] : '';
+		$search_mode = isset( $args['search_mode'] ) ? (string) $args['search_mode'] : 'contains';
 		$rows = []; $debug = [ 'detected'=>[] ];
 		foreach ( $candidates as $raw ) {
 			$table = $wpdb->prefix . $raw;
@@ -40,7 +79,13 @@ class PWR_Repository {
 			$col_device  = self::first_existing( $all, $device_cols );
 			if ( ! $col_url ) continue;
 			$where='1=1'; $params=[];
-			if ( ! empty( $args['search'] ) ) { $where.=" AND `{$table}`.`{$col_url}` LIKE %s"; $params[]='%'.$wpdb->esc_like( $args['search'] ).'%'; }
+			if ( '' !== $search ) {
+				if ( 'exact' === $search_mode ) {
+					$where.=" AND `{$table}`.`{$col_url}` = %s"; $params[]=$search;
+				} else {
+					$where.=" AND `{$table}`.`{$col_url}` LIKE %s"; $params[]='%'.$wpdb->esc_like( $search ).'%';
+				}
+			}
 			$selects = [
 				"`{$table}`.`{$col_url}` AS url",
 				$col_status  ? "`{$table}`.`{$col_status}` AS status"   : "'' AS status",
@@ -80,35 +125,75 @@ class PWR_Repository {
 				$groups[$key]['updated'] = $upd;
 			}
 		}
-		$list = []; $filter = (string)$args['status'];
-		foreach ( $groups as $g ) {
-			if ( $filter ) {
-				$has=false; foreach (['cache','rucss_desktop','rucss_mobile','lazy_desktop','lazy_mobile','priority_desktop','priority_mobile'] as $fld) { if ( isset($g[$fld]) && $g[$fld]===$filter ) { $has=true; break; } }
-				if ( ! $has ) continue;
-			}
-			$list[] = array_merge([
-            'cache_desktop_updated' => isset($g['cache_desktop_updated']) ? $g['cache_desktop_updated'] : '',
-            'cache_mobile_updated'  => isset($g['cache_mobile_updated']) ? $g['cache_mobile_updated'] : '',
-            'rucss_desktop_updated' => isset($g['rucss_desktop_updated']) ? $g['rucss_desktop_updated'] : '',
-            'rucss_mobile_updated'  => isset($g['rucss_mobile_updated']) ? $g['rucss_mobile_updated'] : '',
-            'lazy_desktop_updated'  => isset($g['lazy_desktop_updated']) ? $g['lazy_desktop_updated'] : '',
-            'lazy_mobile_updated'   => isset($g['lazy_mobile_updated']) ? $g['lazy_mobile_updated'] : '',
-            'priority_desktop_updated' => isset($g['priority_desktop_updated']) ? $g['priority_desktop_updated'] : '',
-            'priority_mobile_updated'  => isset($g['priority_mobile_updated']) ? $g['priority_mobile_updated'] : '',
-        ], $g);
-		}
-		$orderby = in_array( $args['orderby'], [ 'url','updated' ], true ) ? $args['orderby'] : 'updated';
-		usort( $list, function( $a, $b ) use ( $orderby, $args ) {
-			$ord = strtolower( $args['order'] ) === 'asc' ? 1 : -1;
-			$va = $a[ $orderby ] ?? ''; $vb = $b[ $orderby ] ?? '';
-			if ( $orderby === 'updated' ) { return ( strtotime( $va ) <=> strtotime( $vb ) ) * $ord; }
-			return ( $va <=> $vb ) * $ord;
-		});
-		$total = count($list); $per=(int)$args['per_page']; $off=max(0,((int)$args['paged']-1)*$per);
-		$items = array_slice($list,$off,$per);
-		if ( isset($_GET['pwr_debug']) && current_user_can( pwr_min_cap() ) ) { return [ 'items'=>$items, 'total'=>$total, 'debug'=>$debug ]; }
-		return [ 'items'=>$items, 'total'=>$total ];
+		return [ 'groups' => $groups, 'debug' => $debug ];
 	}
+
+	const HEALTH_TRANSIENT = 'pwr_health_report';
+
+	/**
+	 * Site-wide status breakdown per layer/device. Always scans the whole site (no search/status
+	 * filter, no pagination) so it reads as a stable health snapshot. Cached via transient because
+	 * it requires an unpaginated scan of every matched row.
+	 */
+	public static function get_health_report( $force_refresh = false ) {
+		if ( $force_refresh ) { delete_transient( self::HEALTH_TRANSIENT ); }
+		$cached = get_transient( self::HEALTH_TRANSIENT );
+		if ( is_array( $cached ) && isset( $cached['fields'] ) ) {
+			$cached['from_cache'] = true;
+			return $cached;
+		}
+		$built  = self::build_groups( [ 'search' => '', 'search_mode' => 'contains' ] );
+		$groups = $built['groups'];
+		$fields  = [ 'cache','rucss_desktop','rucss_mobile','lazy_desktop','lazy_mobile','priority_desktop','priority_mobile' ];
+		$buckets = [ 'pending','in_progress','completed','failed','other' ];
+		$labels  = self::field_labels();
+		$report_fields = [];
+		foreach ( $fields as $field ) {
+			$counts  = array_fill_keys( $buckets, 0 );
+			$tracked = 0;
+			foreach ( $groups as $g ) {
+				$raw = isset( $g[ $field ] ) ? (string) $g[ $field ] : '';
+				if ( '' === $raw ) { continue; }
+				$tracked++;
+				$norm   = self::normalize_status( $raw );
+				$bucket = in_array( $norm, [ 'pending','in_progress','completed','failed' ], true ) ? $norm : 'other';
+				$counts[ $bucket ]++;
+			}
+			$percentages = [];
+			foreach ( $buckets as $b ) {
+				$percentages[ $b ] = $tracked > 0 ? round( ( $counts[ $b ] / $tracked ) * 100, 1 ) : 0.0;
+			}
+			$report_fields[ $field ] = [
+				'label'       => isset( $labels[ $field ] ) ? $labels[ $field ] : $field,
+				'tracked'     => $tracked,
+				'counts'      => $counts,
+				'percentages' => $percentages,
+			];
+		}
+		$report = [
+			'total_urls'   => count( $groups ),
+			'fields'       => $report_fields,
+			'generated_at' => time(),
+		];
+		$ttl = (int) apply_filters( 'pwr_health_cache_ttl', 5 * MINUTE_IN_SECONDS );
+		set_transient( self::HEALTH_TRANSIENT, $report, $ttl );
+		$report['from_cache'] = false;
+		return $report;
+	}
+
+	private static function field_labels() {
+		$labels = [
+			'cache'            => __( 'Page Cache', 'processing-wp-rocket' ),
+			'rucss_desktop'    => __( 'Remove Unused CSS (Desktop)', 'processing-wp-rocket' ),
+			'rucss_mobile'     => __( 'Remove Unused CSS (Mobile)', 'processing-wp-rocket' ),
+			'lazy_desktop'     => __( 'Lazy Render (Desktop)', 'processing-wp-rocket' ),
+			'lazy_mobile'      => __( 'Lazy Render (Mobile)', 'processing-wp-rocket' ),
+			'priority_desktop' => __( 'Priority Elements (Desktop)', 'processing-wp-rocket' ),
+			'priority_mobile'  => __( 'Priority Elements (Mobile)', 'processing-wp-rocket' ),
+		];
+		return apply_filters( 'pwr_health_field_labels', $labels );
+	}
+
 	private static function first_existing( array $all, array $priority ) { foreach ( $priority as $c ) { if ( in_array( $c, $all, true ) ) return $c; } return ''; }
 	private static function canonical_key( $url ) {
 		$p = wp_parse_url( $url ); if ( empty( $p ) ) return '';
@@ -141,7 +226,7 @@ class PWR_Repository {
         if ( in_array( $v, [ 'in progress','in-progress','processing','in_process','processando','em processamento','queued','queue' ], true ) ) return 'in_progress';
         if ( in_array( $v, [ 'done','completed','complete','ok','sucesso','success' ], true ) ) return 'completed';
         if ( in_array( $v, [ 'fail','failed','erro','error' ], true ) ) return 'failed';
-        if ( in_array( $v, [ 'pending','aguardando','pendente' ], true ) ) return 'pending';
+        if ( in_array( $v, [ 'pending','to-submit','to_submit','aguardando','pendente' ], true ) ) return 'pending';
         return $v;
     }
     private static function adjust_datetime( $val ) {
