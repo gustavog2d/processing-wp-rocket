@@ -93,10 +93,10 @@ class PWR_Cron_Status {
 		global $wpdb;
 		$actions = $wpdb->prefix . 'actionscheduler_actions';
 		$groups  = $wpdb->prefix . 'actionscheduler_groups';
-		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $actions ) ) !== $actions ) {
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $actions ) ) ) !== $actions ) {
 			return [ 'available' => false, 'hooks' => [], 'backlog' => null ];
 		}
-		$has_groups = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $groups ) ) === $groups;
+		$has_groups = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $groups ) ) ) === $groups;
 		$like       = '%' . $wpdb->esc_like( $pattern ) . '%';
 		$join       = $has_groups ? "LEFT JOIN `{$groups}` g ON a.group_id = g.group_id" : '';
 		// Placeholders only: every query below goes through a single prepare() call.

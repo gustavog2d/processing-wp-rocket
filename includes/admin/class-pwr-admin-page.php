@@ -41,7 +41,16 @@ class PWR_Admin_Page {
 				<?php submit_button( __( 'Filter', 'processing-wp-rocket' ), 'secondary', 'filter_action', false ); ?>
 			</form>
 			<?php if ( '' !== $list_table->get_error() ) : ?>
-				<div class="notice notice-error"><p><?php echo esc_html( sprintf( /* translators: %s: database error */ __( 'Could not read WP Rocket tables: %s', 'processing-wp-rocket' ), $list_table->get_error() ) ); ?></p></div>
+				<div class="notice notice-error"><p>
+					<?php
+					// The raw database error (table names, SQL fragments) is only shown when debugging.
+					if ( $debug || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+						echo esc_html( sprintf( /* translators: %s: database error */ __( 'Could not read WP Rocket tables: %s', 'processing-wp-rocket' ), $list_table->get_error() ) );
+					} else {
+						esc_html_e( 'Could not read WP Rocket tables. Add ?pwr_debug=1 to the URL to see the database error.', 'processing-wp-rocket' );
+					}
+					?>
+				</p></div>
 			<?php endif; ?>
 			<p class="description pwr-legend">
 				<?php esc_html_e( '[file] = cache file actually on disk right now. [cache] = preload queue status (not proof that the file exists). [css] = Remove Unused CSS job at WP Rocket\'s SaaS; "Completed" means the Used CSS is ready, and the page uses it from its next cache generation. [lazy] / [priority] = data collected by WP Rocket\'s beacon in a real browser; no row means no visit measured yet, not a failure.', 'processing-wp-rocket' ); ?>
@@ -58,6 +67,16 @@ class PWR_Admin_Page {
 			<?php endif; ?>
 		</div>
 		<?php
+	}
+
+	/** Refresh links carry a nonce so a forged link cannot make an admin re-run the heavy queries. */
+	private static function refresh_url( $param ) {
+		return wp_nonce_url( add_query_arg( $param, 1, remove_query_arg( [ 'pwr_refresh_health', 'pwr_refresh_cron', '_wpnonce' ] ) ), 'pwr_refresh' );
+	}
+
+	private static function refresh_requested( $param ) {
+		if ( ! isset( $_GET[ $param ], $_GET['_wpnonce'] ) || ! current_user_can( pwr_min_cap() ) ) { return false; }
+		return (bool) wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'pwr_refresh' );
 	}
 
 	private static function status_badge( $status, $label ) {
@@ -128,6 +147,8 @@ class PWR_Admin_Page {
 			<h3><?php esc_html_e( 'Cache files on disk', 'processing-wp-rocket' ); ?></h3>
 			<?php if ( empty( $report['files'] ) && PWR_WPRocket_Adapter::host_handles_page_cache() ) : ?>
 				<p><?php esc_html_e( 'Page cache is handled by the hosting, so WP Rocket writes no cache files to inspect. Check the page source in the browser for the data-wpr-features meta tag instead.', 'processing-wp-rocket' ); ?></p>
+			<?php elseif ( '' === $report['dir'] ) : ?>
+				<p class="pwr-note"><?php esc_html_e( 'This URL does not belong to this site, so its cache files were not read.', 'processing-wp-rocket' ); ?></p>
 			<?php elseif ( empty( $report['files'] ) ) : ?>
 				<p><?php echo esc_html( sprintf( /* translators: %s: folder path */ __( 'No cache file found in %s. The page is not cached right now on this server (never generated, purged, excluded, or cached on another server node).', 'processing-wp-rocket' ), str_replace( WP_CONTENT_DIR, 'wp-content', $report['dir'] ) ) ); ?></p>
 			<?php else : ?>
@@ -199,7 +220,7 @@ class PWR_Admin_Page {
 					?>
 					<tr>
 						<td><?php echo esc_html( isset( $labels[ $field ] ) ? $labels[ $field ] : $field ); ?></td>
-						<td><?php echo '' === $st ? '—' : '<span class="pwr-badge pwr-status-' . esc_attr( PWR_Repository::normalize_status( $st ) ) . '" title="' . esc_attr( $st ) . '">' . esc_html( PWR_Repository::label_for_status( $st ) ) . '</span>'; ?></td>
+						<td><?php echo '' === $st ? '—' : '<span class="pwr-badge pwr-status-' . esc_attr( sanitize_html_class( PWR_Repository::normalize_status( $st ) ) ) . '" title="' . esc_attr( $st ) . '">' . esc_html( PWR_Repository::label_for_status( $st ) ) . '</span>'; ?></td>
 						<td><?php echo esc_html( PWR_List_Table::format_datetime( $item[ $field . '_updated' ] ) ); ?></td>
 						<td><?php echo $err ? esc_html( trim( ( '' !== $err['code'] ? '[' . $err['code'] . '] ' : '' ) . $err['message'] ) ) : '—'; ?></td>
 						<td><?php echo $err ? esc_html( trim( $err['retries'] . ( '' !== $err['next_retry'] ? ' · ' . PWR_List_Table::format_datetime( $err['next_retry'] ) : '' ) ) ) : '—'; ?></td>
@@ -212,14 +233,14 @@ class PWR_Admin_Page {
 	}
 
 	private static function render_health_panel() {
-		$force    = isset( $_GET['pwr_refresh_health'] ) && current_user_can( pwr_min_cap() ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$force    = self::refresh_requested( 'pwr_refresh_health' );
 		$report   = PWR_Repository::get_health_report( $force );
 		$statuses = PWR_Repository::get_status_filters();
 		?>
 		<div class="pwr-panel pwr-health-panel">
 			<h2>
 				<?php esc_html_e( 'Site Health', 'processing-wp-rocket' ); ?>
-				<a class="pwr-refresh-link" href="<?php echo esc_url( add_query_arg( 'pwr_refresh_health', 1 ) ); ?>"><?php esc_html_e( 'Refresh', 'processing-wp-rocket' ); ?></a>
+				<a class="pwr-refresh-link" href="<?php echo esc_url( self::refresh_url( 'pwr_refresh_health' ) ); ?>"><?php esc_html_e( 'Refresh', 'processing-wp-rocket' ); ?></a>
 			</h2>
 			<?php if ( 0 === (int) $report['total_urls'] ) : ?>
 				<p><?php esc_html_e( 'No data yet.', 'processing-wp-rocket' ); ?></p>
@@ -287,13 +308,13 @@ class PWR_Admin_Page {
 	}
 
 	private static function render_cron_panel() {
-		$force  = isset( $_GET['pwr_refresh_cron'] ) && current_user_can( pwr_min_cap() ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$force  = self::refresh_requested( 'pwr_refresh_cron' );
 		$status = PWR_Cron_Status::get_status( $force );
 		?>
 		<div class="pwr-panel pwr-cron-panel">
 			<h2>
 				<?php esc_html_e( 'Cron Status', 'processing-wp-rocket' ); ?>
-				<a class="pwr-refresh-link" href="<?php echo esc_url( add_query_arg( 'pwr_refresh_cron', 1 ) ); ?>"><?php esc_html_e( 'Refresh', 'processing-wp-rocket' ); ?></a>
+				<a class="pwr-refresh-link" href="<?php echo esc_url( self::refresh_url( 'pwr_refresh_cron' ) ); ?>"><?php esc_html_e( 'Refresh', 'processing-wp-rocket' ); ?></a>
 			</h2>
 			<?php if ( empty( $status['rocket_active'] ) ) : ?>
 				<p><?php esc_html_e( 'WP Rocket is not active.', 'processing-wp-rocket' ); ?></p>
