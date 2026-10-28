@@ -76,6 +76,9 @@ class PWR_List_Table extends WP_List_Table {
 	}
 
 	private function render_file_cell( $url ) {
+		if ( PWR_WPRocket_Adapter::host_handles_page_cache() ) {
+			return '<span class="pwr-badge pwr-status-info" title="' . esc_attr__( 'Page cache handled by the hosting; WP Rocket writes no cache files here.', 'processing-wp-rocket' ) . '">' . esc_html__( 'host cache', 'processing-wp-rocket' ) . '</span>';
+		}
 		$summary = PWR_Cache_Inspector::file_summary( $url );
 		$out     = $this->file_line( __( 'desktop', 'processing-wp-rocket' ), $summary['desktop'] );
 		if ( false !== $summary['mobile'] ) {

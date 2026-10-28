@@ -126,7 +126,9 @@ class PWR_Admin_Page {
 			<?php endif; ?>
 
 			<h3><?php esc_html_e( 'Cache files on disk', 'processing-wp-rocket' ); ?></h3>
-			<?php if ( empty( $report['files'] ) ) : ?>
+			<?php if ( empty( $report['files'] ) && PWR_WPRocket_Adapter::host_handles_page_cache() ) : ?>
+				<p><?php esc_html_e( 'Page cache is handled by the hosting, so WP Rocket writes no cache files to inspect. Check the page source in the browser for the data-wpr-features meta tag instead.', 'processing-wp-rocket' ); ?></p>
+			<?php elseif ( empty( $report['files'] ) ) : ?>
 				<p><?php echo esc_html( sprintf( /* translators: %s: folder path */ __( 'No cache file found in %s. The page is not cached right now on this server (never generated, purged, excluded, or cached on another server node).', 'processing-wp-rocket' ), str_replace( WP_CONTENT_DIR, 'wp-content', $report['dir'] ) ) ); ?></p>
 			<?php else : ?>
 				<table class="widefat striped">
