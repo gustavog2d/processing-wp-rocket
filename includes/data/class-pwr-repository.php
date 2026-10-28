@@ -255,7 +255,9 @@ class PWR_Repository {
 				$where       .= $wpdb->prepare( " AND LOWER(TRIM(`{$s['cols']['status']}`)) IN ({$placeholders})", $raws );
 			}
 			$updated = $s['cols']['updated'] ? "`{$s['cols']['updated']}`" : 'NULL';
-			$parts[] = "SELECT {$url_col} AS url, {$updated} AS updated FROM `{$s['table']}` WHERE {$where}";
+			// CAST AS BINARY: tables created at different times (or after a DB migration) can have
+			// different collations, and UNION refuses to mix them ("Illegal mix of collations").
+			$parts[] = "SELECT CAST({$url_col} AS BINARY) AS url, {$updated} AS updated FROM `{$s['table']}` WHERE {$where}";
 		}
 		return implode( ' UNION ALL ', $parts );
 	}
