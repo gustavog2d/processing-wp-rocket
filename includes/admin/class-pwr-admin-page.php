@@ -222,7 +222,7 @@ class PWR_Admin_Page {
 						<td><?php echo esc_html( isset( $labels[ $field ] ) ? $labels[ $field ] : $field ); ?></td>
 						<td><?php echo '' === $st ? '—' : '<span class="pwr-badge pwr-status-' . esc_attr( sanitize_html_class( PWR_Repository::normalize_status( $st ) ) ) . '" title="' . esc_attr( $st ) . '">' . esc_html( PWR_Repository::label_for_status( $st ) ) . '</span>'; ?></td>
 						<td><?php echo esc_html( PWR_List_Table::format_datetime( $item[ $field . '_updated' ] ) ); ?></td>
-						<td><?php echo $err ? esc_html( trim( ( '' !== $err['code'] ? '[' . $err['code'] . '] ' : '' ) . $err['message'] ) ) : '—'; ?></td>
+						<td><?php echo $err ? self::render_error_log( $err ) : '—'; ?></td>
 						<td><?php echo $err ? esc_html( trim( $err['retries'] . ( '' !== $err['next_retry'] ? ' · ' . PWR_List_Table::format_datetime( $err['next_retry'] ) : '' ) ) ) : '—'; ?></td>
 					</tr>
 				<?php endforeach; ?>
@@ -230,6 +230,44 @@ class PWR_Admin_Page {
 			</table>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Readable version of WP Rocket's accumulated error column: last failure, grouped attempts,
+	 * a concurrency warning when the same failure repeats within one second, and the raw text.
+	 */
+	private static function render_error_log( array $err ) {
+		$log = PWR_Error_Log::parse( $err['message'], $err['code'] );
+		if ( ! $log['last'] ) {
+			return esc_html( trim( ( '' !== $err['code'] ? '[' . $err['code'] . '] ' : '' ) . $err['message'] ) );
+		}
+		$last = $log['last'];
+		$out  = '<div class="pwr-errlog">';
+		$out .= '<p class="pwr-errlog-last"><strong>' . esc_html__( 'Last failure:', 'processing-wp-rocket' ) . '</strong> '
+			. esc_html( trim( ( '' !== $last['code'] ? $last['code'] . ' · ' : '' ) . $last['message'] ) )
+			. ( '' !== $last['time'] ? ' <span class="pwr-date">(' . esc_html( PWR_List_Table::format_datetime( $last['time'] ) ) . ')</span>' : '' )
+			. '</p>';
+		if ( $log['attempts'] > 1 ) {
+			$out .= '<p class="pwr-errlog-count">' . esc_html( sprintf(
+				/* translators: 1: number of failed attempts, 2: number of distinct errors */
+				_n( '%1$d failed attempt recorded, %2$d distinct error:', '%1$d failed attempts recorded, %2$d distinct errors:', $log['attempts'], 'processing-wp-rocket' ),
+				$log['attempts'],
+				count( $log['groups'] )
+			) ) . '</p><ul class="pwr-errlog-groups">';
+			foreach ( $log['groups'] as $g ) {
+				$out .= '<li>' . esc_html( PWR_Error_Log::group_line( $g ) ) . '</li>';
+			}
+			$out .= '</ul>';
+		}
+		if ( $log['burst'] ) {
+			$out .= '<p class="pwr-errlog-burst"><span class="dashicons dashicons-warning" aria-hidden="true"></span> ' . esc_html( PWR_Error_Log::burst_text( $log['burst'] ) ) . '</p>';
+		}
+		if ( $log['truncated'] ) {
+			$out .= '<p class="pwr-date">' . esc_html__( 'Only the newest part of a very long log was analyzed.', 'processing-wp-rocket' ) . '</p>';
+		}
+		$out .= '<details class="pwr-errlog-raw"><summary>' . esc_html__( 'Raw text from WP Rocket', 'processing-wp-rocket' ) . '</summary><code>'
+			. esc_html( trim( ( '' !== $err['code'] ? '[' . $err['code'] . '] ' : '' ) . $err['message'] ) ) . '</code></details>';
+		return $out . '</div>';
 	}
 
 	private static function render_health_panel() {

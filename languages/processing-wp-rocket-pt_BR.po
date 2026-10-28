@@ -16,7 +16,7 @@ msgstr ""
 
 #. Plugin Name of the plugin
 #: processing-wp-rocket.php includes/admin/class-pwr-admin-page.php:23
-#: includes/class-pwr-plugin.php:23 includes/class-pwr-plugin.php:24
+#: includes/class-pwr-plugin.php:24 includes/class-pwr-plugin.php:25
 msgid "Processing WP Rocket"
 msgstr "Processamento WP Rocket"
 
@@ -305,7 +305,7 @@ msgid "Processing queues for this URL"
 msgstr "Filas de processamento desta URL"
 
 #: includes/admin/class-pwr-admin-page.php:208
-#: includes/admin/class-pwr-admin-page.php:262
+#: includes/admin/class-pwr-admin-page.php:300
 msgid "Layer"
 msgstr "Camada"
 
@@ -321,65 +321,85 @@ msgstr "Atualizado"
 msgid "Retries / next retry"
 msgstr "Tentativas / próxima tentativa"
 
-#: includes/admin/class-pwr-admin-page.php:242
+#: includes/admin/class-pwr-admin-page.php:246
+msgid "Last failure:"
+msgstr "Última falha:"
+
+#. translators: 1: number of failed attempts, 2: number of distinct errors
+#: includes/admin/class-pwr-admin-page.php:253
+#, php-format
+msgid "%1$d failed attempt recorded, %2$d distinct error:"
+msgid_plural "%1$d failed attempts recorded, %2$d distinct errors:"
+msgstr[0] "%1$d tentativa com falha registrada, %2$d erro distinto:"
+msgstr[1] "%1$d tentativas com falha registradas, %2$d erros distintos:"
+
+#: includes/admin/class-pwr-admin-page.php:266
+msgid "Only the newest part of a very long log was analyzed."
+msgstr "Só a parte mais recente de um registro muito longo foi analisada."
+
+#: includes/admin/class-pwr-admin-page.php:268
+msgid "Raw text from WP Rocket"
+msgstr "Texto original do WP Rocket"
+
+#: includes/admin/class-pwr-admin-page.php:280
 msgid "Site Health"
 msgstr "Saúde do site"
 
-#: includes/admin/class-pwr-admin-page.php:243
-#: includes/admin/class-pwr-admin-page.php:317
+#: includes/admin/class-pwr-admin-page.php:281
+#: includes/admin/class-pwr-admin-page.php:355
 msgid "Refresh"
 msgstr "Atualizar"
 
-#: includes/admin/class-pwr-admin-page.php:246
+#: includes/admin/class-pwr-admin-page.php:284
 msgid "No data yet."
 msgstr "Ainda sem dados."
 
 #. translators: 1: number of URLs tracked, 2: date/time the report was
 #. generated, 3: " (cached)" or empty
-#: includes/admin/class-pwr-admin-page.php:252
+#: includes/admin/class-pwr-admin-page.php:290
 #, php-format
 msgid "%1$d URLs tracked · as of %2$s%3$s"
 msgstr "%1$d URLs monitoradas · em %2$s%3$s"
 
-#: includes/admin/class-pwr-admin-page.php:255
+#: includes/admin/class-pwr-admin-page.php:293
 msgid " (cached)"
 msgstr " (em cache)"
 
-#: includes/admin/class-pwr-admin-page.php:266
+#: includes/admin/class-pwr-admin-page.php:304
 msgid "Tracked"
 msgstr "Monitoradas"
 
-#: includes/admin/class-pwr-admin-page.php:267
+#: includes/admin/class-pwr-admin-page.php:305
 msgid ""
 "Share of URLs in the preload/cache table that also have a row in this layer"
 msgstr ""
 "Parcela das URLs da tabela de preload/cache que também têm linha nesta "
 "camada"
 
-#: includes/admin/class-pwr-admin-page.php:267
+#: includes/admin/class-pwr-admin-page.php:305
 msgid "Coverage vs cache"
 msgstr "Cobertura vs cache"
 
-#: includes/admin/class-pwr-admin-page.php:279
+#: includes/admin/class-pwr-admin-page.php:317
 msgid "No data"
 msgstr "Sem dados"
 
 #. translators: %d: number of URLs with an unrecognized status value
-#: includes/admin/class-pwr-admin-page.php:299
+#: includes/admin/class-pwr-admin-page.php:337
 #, php-format
 msgid "%d URL(s) had a status value not recognized by any layer above."
 msgstr "%d URL(s) tinham um status não reconhecido por nenhuma camada acima."
 
-#: includes/admin/class-pwr-admin-page.php:316
+#: includes/admin/class-pwr-admin-page.php:354
 msgid "Cron Status"
 msgstr "Status do cron"
 
-#: includes/admin/class-pwr-admin-page.php:320
+#: includes/admin/class-pwr-admin-page.php:358
 #: includes/integration/class-pwr-environment.php:19
 msgid "WP Rocket is not active."
 msgstr "O WP Rocket não está ativo."
 
-#: includes/admin/class-pwr-admin-page.php:323
+#: includes/admin/class-pwr-admin-page.php:361
 msgid ""
 "Note: DISABLE_WP_CRON is set. This is common on sites using a real system "
 "cron job and is not necessarily a problem."
@@ -387,70 +407,70 @@ msgstr ""
 "Observação: DISABLE_WP_CRON está definido. Isso é comum em sites que usam "
 "cron real do sistema e não é necessariamente um problema."
 
-#: includes/admin/class-pwr-admin-page.php:326
+#: includes/admin/class-pwr-admin-page.php:364
 msgid "Action Scheduler queue"
 msgstr "Fila do Action Scheduler"
 
-#: includes/admin/class-pwr-admin-page.php:329
+#: includes/admin/class-pwr-admin-page.php:367
 msgid "Action Scheduler is not loaded on this site."
 msgstr "O Action Scheduler não está carregado neste site."
 
-#: includes/admin/class-pwr-admin-page.php:331
+#: includes/admin/class-pwr-admin-page.php:369
 msgid "No pending WP Rocket actions."
 msgstr "Nenhuma ação pendente do WP Rocket."
 
-#: includes/admin/class-pwr-admin-page.php:335
+#: includes/admin/class-pwr-admin-page.php:373
 msgid "Group"
 msgstr "Grupo"
 
-#: includes/admin/class-pwr-admin-page.php:336
+#: includes/admin/class-pwr-admin-page.php:374
 #: includes/data/class-pwr-repository.php:39
 msgid "Pending"
 msgstr "Pendente"
 
-#: includes/admin/class-pwr-admin-page.php:337
+#: includes/admin/class-pwr-admin-page.php:375
 msgid "Running"
 msgstr "Executando"
 
-#: includes/admin/class-pwr-admin-page.php:338
-#: includes/admin/class-pwr-admin-page.php:394
+#: includes/admin/class-pwr-admin-page.php:376
+#: includes/admin/class-pwr-admin-page.php:432
 msgid "Overdue"
 msgstr "Atrasadas"
 
-#: includes/admin/class-pwr-admin-page.php:339
+#: includes/admin/class-pwr-admin-page.php:377
 msgid "Oldest overdue since"
 msgstr "Atrasada mais antiga desde"
 
 #. translators: %d: number of days
-#: includes/admin/class-pwr-admin-page.php:356
+#: includes/admin/class-pwr-admin-page.php:394
 #, php-format
 msgid "Action Scheduler history (last %d days)"
 msgstr "Histórico do Action Scheduler (últimos %d dias)"
 
-#: includes/admin/class-pwr-admin-page.php:358
+#: includes/admin/class-pwr-admin-page.php:396
 msgid "No WP Rocket related scheduled actions found."
 msgstr "Nenhuma ação agendada do WP Rocket encontrada."
 
-#: includes/admin/class-pwr-admin-page.php:364
+#: includes/admin/class-pwr-admin-page.php:402
 msgid "never run"
 msgstr "nunca executado"
 
 #. translators: 1: number of successful recent runs, 2: total recent runs
 #. considered
-#: includes/admin/class-pwr-admin-page.php:372
+#: includes/admin/class-pwr-admin-page.php:410
 #, php-format
 msgid "(%1$d / %2$d succeeded recently)"
 msgstr "(%1$d / %2$d com sucesso recentemente)"
 
-#: includes/admin/class-pwr-admin-page.php:384
+#: includes/admin/class-pwr-admin-page.php:422
 msgid "WP-Cron Hooks"
 msgstr "Hooks do WP-Cron"
 
-#: includes/admin/class-pwr-admin-page.php:386
+#: includes/admin/class-pwr-admin-page.php:424
 msgid "No WP Rocket cron hooks detected."
 msgstr "Nenhum hook de cron do WP Rocket detectado."
 
-#: includes/admin/class-pwr-admin-page.php:392
+#: includes/admin/class-pwr-admin-page.php:430
 msgid "not scheduled"
 msgstr "não agendado"
 
@@ -523,13 +543,54 @@ msgstr "mobile"
 msgid "No cache file on disk for this variant"
 msgstr "Sem arquivo de cache no disco para esta variante"
 
-#: includes/admin/class-pwr-list-table.php:128
+#: includes/admin/class-pwr-list-table.php:122
+msgid "parallel cron?"
+msgstr "cron em paralelo?"
+
+#: includes/admin/class-pwr-list-table.php:133
 msgid "Inspect"
 msgstr "Inspecionar"
 
-#: includes/admin/class-pwr-list-table.php:129
+#: includes/admin/class-pwr-list-table.php:134
 msgid "PageSpeed"
 msgstr "PageSpeed"
+
+#. translators: %d: number of failed attempts recorded
+#: includes/data/class-pwr-error-log.php:139
+#, php-format
+msgid "(%d attempt)"
+msgid_plural "(%d attempts)"
+msgstr[0] "(%d tentativa)"
+msgstr[1] "(%d tentativas)"
+
+#. translators: 1: number of times, 2: date/time, 3: number of seconds with
+#. repeats
+#: includes/data/class-pwr-error-log.php:174
+#, php-format
+msgid ""
+"The same failure was recorded %1$d times in the same second (%2$s), and this"
+" happened in %3$d different seconds."
+msgstr ""
+"A mesma falha foi registrada %1$d vezes no mesmo segundo (%2$s), e isso "
+"aconteceu em %3$d segundos diferentes."
+
+#. translators: 1: number of times, 2: date/time
+#: includes/data/class-pwr-error-log.php:177
+#, php-format
+msgid "The same failure was recorded %1$d times in the same second (%2$s)."
+msgstr "A mesma falha foi registrada %1$d vezes no mesmo segundo (%2$s)."
+
+#: includes/data/class-pwr-error-log.php:179
+msgid ""
+"A single cron run records each job only once per pass, so this usually means"
+" several cron runners (several servers, or WP-Cron plus a system cron) are "
+"processing the same queue at once. Run WP-Cron/Action Scheduler from a "
+"single place."
+msgstr ""
+"Uma execução do cron registra cada job só uma vez por passada, então isso "
+"costuma indicar várias execuções do cron (vários servidores, ou WP-Cron "
+"junto com um cron do sistema) processando a mesma fila ao mesmo tempo. Rode "
+"o WP-Cron/Action Scheduler a partir de um único lugar."
 
 #: includes/data/class-pwr-repository.php:40
 msgid "In Progress"
