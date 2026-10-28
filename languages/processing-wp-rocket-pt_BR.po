@@ -1,79 +1,830 @@
+#
 msgid ""
 msgstr ""
-"Project-Id-Version: processing-wp-rocket 1.4.7\n"
+"Project-Id-Version: processing-wp-rocket 2.2.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-08-25 00:00+0000\n"
-"PO-Revision-Date: 2025-08-25 00:00+0000\n"
+"PO-Revision-Date: 2026-10-28 00:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: pt_BR\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Domain: processing-wp-rocket\n"
 
+#. Plugin Name of the plugin
+#: processing-wp-rocket.php includes/admin/class-pwr-admin-page.php:23
+#: includes/class-pwr-plugin.php:23 includes/class-pwr-plugin.php:24
 msgid "Processing WP Rocket"
 msgstr "Processamento WP Rocket"
 
+#. Plugin URI of the plugin
+#: processing-wp-rocket.php
+msgid "https://github.com/gustavog2d/processing-wp-rocket"
+msgstr "https://github.com/gustavog2d/processing-wp-rocket"
+
+#. Description of the plugin
+#: processing-wp-rocket.php
+msgid ""
+"Read-only diagnostics for WP Rocket: per-URL processing status, cache files "
+"on disk, optimizations actually applied to each page, SaaS errors, "
+"environment checklist and queue health."
+msgstr ""
+"Diagnóstico somente leitura do WP Rocket: status de processamento por URL, "
+"arquivos de cache no disco, otimizações realmente aplicadas em cada página, "
+"erros do SaaS, checklist do ambiente e saúde das filas."
+
+#. Author of the plugin
+#: processing-wp-rocket.php
+msgid "Gustavo Henrique"
+msgstr "Gustavo Henrique"
+
+#. Author URI of the plugin
+#: processing-wp-rocket.php
+msgid "https://github.com/gustavog2d"
+msgstr "https://github.com/gustavog2d"
+
+#: includes/admin/class-pwr-admin-page.php:7
 msgid "You do not have permission to access this page."
 msgstr "Você não tem permissão para acessar esta página."
 
+#: includes/admin/class-pwr-admin-page.php:31
 msgid "Filter by status"
 msgstr "Filtrar por status"
 
+#: includes/admin/class-pwr-admin-page.php:33
 msgid "All statuses"
 msgstr "Todos os status"
 
+#: includes/admin/class-pwr-admin-page.php:38
 msgid "Search URL"
 msgstr "Pesquisar URL"
 
+#: includes/admin/class-pwr-admin-page.php:39
+msgid "Search URL…"
+msgstr "Pesquisar URL…"
+
+#: includes/admin/class-pwr-admin-page.php:40
+msgid "Exact match"
+msgstr "Correspondência exata"
+
+#: includes/admin/class-pwr-admin-page.php:41
 msgid "Filter"
 msgstr "Filtrar"
 
+#. translators: %s: database error
+#: includes/admin/class-pwr-admin-page.php:44
+#, php-format
+msgid "Could not read WP Rocket tables: %s"
+msgstr "Não foi possível ler as tabelas do WP Rocket: %s"
+
+#: includes/admin/class-pwr-admin-page.php:47
+msgid ""
+"[file] = cache file actually on disk right now. [cache] = preload queue "
+"status (not proof that the file exists). [css] = Remove Unused CSS job at WP"
+" Rocket's SaaS; \"Completed\" means the Used CSS is ready, and the page uses"
+" it from its next cache generation. [lazy] / [priority] = data collected by "
+"WP Rocket's beacon in a real browser; no row means no visit measured yet, "
+"not a failure."
+msgstr ""
+"[arquivo] = arquivo de cache que existe no disco agora. [cache] = status da "
+"fila de preload (não prova que o arquivo existe). [css] = job do Remove "
+"Unused CSS no SaaS do WP Rocket; \"Concluído\" significa que o Used CSS está"
+" pronto, e a página passa a usá-lo na próxima geração do cache. [lazy] / "
+"[priority] = dados coletados pelo beacon do WP Rocket num navegador real; "
+"sem linha significa que nenhuma visita foi medida ainda, não uma falha."
+
+#: includes/admin/class-pwr-admin-page.php:55
 msgid "PWR Debug:"
 msgstr "PWR Depuração:"
 
-msgid "URL"
-msgstr "URL"
+#: includes/admin/class-pwr-admin-page.php:73
+msgid "OK"
+msgstr "OK"
 
-msgid "[cache]"
-msgstr "[cache]"
+#: includes/admin/class-pwr-admin-page.php:74
+msgid "Info"
+msgstr "Info"
 
-msgid "[css] [desktop]"
-msgstr "[css] [desktop]"
+#: includes/admin/class-pwr-admin-page.php:75
+msgid "Warning"
+msgstr "Atenção"
 
-msgid "[css] [mobile]"
-msgstr "[css] [mobile]"
+#: includes/admin/class-pwr-admin-page.php:76
+#: includes/admin/class-pwr-admin-page.php:188
+msgid "Error"
+msgstr "Erro"
 
-msgid "[lazy] [desktop]"
-msgstr "[lazy] [desktop]"
+#: includes/admin/class-pwr-admin-page.php:78
+msgid "everything WP Rocket needs is in place"
+msgstr "tudo o que o WP Rocket precisa está no lugar"
 
-msgid "[lazy] [mobile]"
-msgstr "[lazy] [mobile]"
+#: includes/admin/class-pwr-admin-page.php:78
+msgid "problems found"
+msgstr "problemas encontrados"
 
-msgid "[priority] [desktop]"
-msgstr "[prioridade] [desktop]"
+#: includes/admin/class-pwr-admin-page.php:78
+msgid "points of attention"
+msgstr "pontos de atenção"
 
-msgid "[priority] [mobile]"
-msgstr "[prioridade] [mobile]"
+#: includes/admin/class-pwr-admin-page.php:81
+msgid "Environment Checklist"
+msgstr "Checklist do ambiente"
 
-msgid "Last Update (any)"
-msgstr "Última atualização (qualquer)"
+#: includes/admin/class-pwr-admin-page.php:102
+msgid "Applied"
+msgstr "Aplicado"
 
-msgid "Actions"
-msgstr "Ações"
+#: includes/admin/class-pwr-admin-page.php:103
+msgid "Applied (not enabled in settings)"
+msgstr "Aplicado (não ligado nas configurações)"
 
-msgid "PageSpeed"
-msgstr "PageSpeed"
+#: includes/admin/class-pwr-admin-page.php:104
+msgid "Enabled but missing"
+msgstr "Ligado, mas ausente"
 
+#: includes/admin/class-pwr-admin-page.php:105
+msgid "Enabled, waiting for data"
+msgstr "Ligado, aguardando dados"
+
+#: includes/admin/class-pwr-admin-page.php:106
+msgid "Data ready, page not regenerated yet"
+msgstr "Dados prontos, página ainda não regerada"
+
+#: includes/admin/class-pwr-admin-page.php:107
+msgid "Enabled, data processing failed"
+msgstr "Ligado, processamento dos dados falhou"
+
+#: includes/admin/class-pwr-admin-page.php:108
+msgid "Disabled for this post"
+msgstr "Desligado neste post"
+
+#: includes/admin/class-pwr-admin-page.php:109
+msgid "Enabled (could not verify)"
+msgstr "Ligado (não foi possível verificar)"
+
+#: includes/admin/class-pwr-admin-page.php:110
+msgid "Off"
+msgstr "Desligado"
+
+#: includes/admin/class-pwr-admin-page.php:116
+msgid "Inspect URL"
+msgstr "Inspecionar URL"
+
+#: includes/admin/class-pwr-admin-page.php:117
+msgid "Close"
+msgstr "Fechar"
+
+#. translators: %d: post ID
+#: includes/admin/class-pwr-admin-page.php:121
+#, php-format
+msgid "Post #%d"
+msgstr "Post #%d"
+
+#. translators: %s: list of options
+#: includes/admin/class-pwr-admin-page.php:125
+#, php-format
+msgid "Options disabled for this post in the WP Rocket metabox: %s"
+msgstr "Opções desligadas para este post na metabox do WP Rocket: %s"
+
+#: includes/admin/class-pwr-admin-page.php:128
+msgid "Cache files on disk"
+msgstr "Arquivos de cache no disco"
+
+#. translators: %s: folder path
+#: includes/admin/class-pwr-admin-page.php:130
+#, php-format
+msgid ""
+"No cache file found in %s. The page is not cached right now on this server "
+"(never generated, purged, excluded, or cached on another server node)."
+msgstr ""
+"Nenhum arquivo de cache encontrado em %s. A página não está em cache agora "
+"neste servidor (nunca gerada, purgada, excluída ou em cache em outro nó do "
+"servidor)."
+
+#: includes/admin/class-pwr-admin-page.php:134
+msgid "File"
+msgstr "Arquivo"
+
+#: includes/admin/class-pwr-admin-page.php:135
+msgid "Variant"
+msgstr "Variante"
+
+#: includes/admin/class-pwr-admin-page.php:136
+msgid "Size"
+msgstr "Tamanho"
+
+#: includes/admin/class-pwr-admin-page.php:137
+msgid "Generated"
+msgstr "Gerado em"
+
+#: includes/admin/class-pwr-admin-page.php:138
+msgid "Expires (cache lifespan)"
+msgstr "Expira (tempo de vida do cache)"
+
+#. translators: %s: time difference
+#. translators: %s: human readable time difference, e.g. "3 hours"
+#: includes/admin/class-pwr-admin-page.php:146
+#: includes/admin/class-pwr-list-table.php:92
+#, php-format
+msgid "%s ago"
+msgstr "há %s"
+
+#. translators: %s: time difference
+#: includes/admin/class-pwr-admin-page.php:147
+msgid "Never"
+msgstr "Nunca"
+
+#. translators: %s: file name
+#: includes/admin/class-pwr-admin-page.php:155
+#, php-format
+msgid "Optimizations applied in %s"
+msgstr "Otimizações aplicadas em %s"
+
+#. translators: %s: date
+#: includes/admin/class-pwr-admin-page.php:157
+#, php-format
+msgid "WP Rocket footprint: cached at %s."
+msgstr "Assinatura do WP Rocket: cacheado em %s."
+
+#: includes/admin/class-pwr-admin-page.php:164
+msgid "Optimization"
+msgstr "Otimização"
+
+#: includes/admin/class-pwr-admin-page.php:165
+msgid "Marker"
+msgstr "Marcador"
+
+#: includes/admin/class-pwr-admin-page.php:166
+msgid "Result"
+msgstr "Resultado"
+
+#: includes/admin/class-pwr-admin-page.php:179
+msgid ""
+"\"Enabled but missing\" can be legitimate when the page has nothing for that"
+" step (no iframes, no images without dimensions) or when an exclusion "
+"matched. \"Waiting for data\" depends on WP Rocket's SaaS or beacon having "
+"processed this URL; the marker appears on the next cache generation after "
+"that."
+msgstr ""
+"\"Ligado, mas ausente\" pode ser legítimo quando a página não tem nada para "
+"aquela etapa (sem iframes, sem imagens sem dimensões) ou quando uma exclusão"
+" casou. \"Aguardando dados\" depende do SaaS ou do beacon do WP Rocket terem"
+" processado esta URL; o marcador aparece na geração do cache seguinte."
+
+#: includes/admin/class-pwr-admin-page.php:182
+msgid "Processing queues for this URL"
+msgstr "Filas de processamento desta URL"
+
+#: includes/admin/class-pwr-admin-page.php:185
+#: includes/admin/class-pwr-admin-page.php:239
+msgid "Layer"
+msgstr "Camada"
+
+#: includes/admin/class-pwr-admin-page.php:186
+msgid "Status"
+msgstr "Status"
+
+#: includes/admin/class-pwr-admin-page.php:187
+msgid "Updated"
+msgstr "Atualizado"
+
+#: includes/admin/class-pwr-admin-page.php:189
+msgid "Retries / next retry"
+msgstr "Tentativas / próxima tentativa"
+
+#: includes/admin/class-pwr-admin-page.php:219
+msgid "Site Health"
+msgstr "Saúde do site"
+
+#: includes/admin/class-pwr-admin-page.php:220
+#: includes/admin/class-pwr-admin-page.php:294
+msgid "Refresh"
+msgstr "Atualizar"
+
+#: includes/admin/class-pwr-admin-page.php:223
+msgid "No data yet."
+msgstr "Ainda sem dados."
+
+#. translators: 1: number of URLs tracked, 2: date/time the report was
+#. generated, 3: " (cached)" or empty
+#: includes/admin/class-pwr-admin-page.php:229
+#, php-format
+msgid "%1$d URLs tracked · as of %2$s%3$s"
+msgstr "%1$d URLs monitoradas · em %2$s%3$s"
+
+#: includes/admin/class-pwr-admin-page.php:232
+msgid " (cached)"
+msgstr " (em cache)"
+
+#: includes/admin/class-pwr-admin-page.php:243
+msgid "Tracked"
+msgstr "Monitoradas"
+
+#: includes/admin/class-pwr-admin-page.php:244
+msgid ""
+"Share of URLs in the preload/cache table that also have a row in this layer"
+msgstr ""
+"Parcela das URLs da tabela de preload/cache que também têm linha nesta "
+"camada"
+
+#: includes/admin/class-pwr-admin-page.php:244
+msgid "Coverage vs cache"
+msgstr "Cobertura vs cache"
+
+#: includes/admin/class-pwr-admin-page.php:256
+msgid "No data"
+msgstr "Sem dados"
+
+#. translators: %d: number of URLs with an unrecognized status value
+#: includes/admin/class-pwr-admin-page.php:276
+#, php-format
+msgid "%d URL(s) had a status value not recognized by any layer above."
+msgstr "%d URL(s) tinham um status não reconhecido por nenhuma camada acima."
+
+#: includes/admin/class-pwr-admin-page.php:293
+msgid "Cron Status"
+msgstr "Status do cron"
+
+#: includes/admin/class-pwr-admin-page.php:297
+#: includes/integration/class-pwr-environment.php:19
+msgid "WP Rocket is not active."
+msgstr "O WP Rocket não está ativo."
+
+#: includes/admin/class-pwr-admin-page.php:300
+msgid ""
+"Note: DISABLE_WP_CRON is set. This is common on sites using a real system "
+"cron job and is not necessarily a problem."
+msgstr ""
+"Observação: DISABLE_WP_CRON está definido. Isso é comum em sites que usam "
+"cron real do sistema e não é necessariamente um problema."
+
+#: includes/admin/class-pwr-admin-page.php:303
+msgid "Action Scheduler queue"
+msgstr "Fila do Action Scheduler"
+
+#: includes/admin/class-pwr-admin-page.php:306
+msgid "Action Scheduler is not loaded on this site."
+msgstr "O Action Scheduler não está carregado neste site."
+
+#: includes/admin/class-pwr-admin-page.php:308
+msgid "No pending WP Rocket actions."
+msgstr "Nenhuma ação pendente do WP Rocket."
+
+#: includes/admin/class-pwr-admin-page.php:312
+msgid "Group"
+msgstr "Grupo"
+
+#: includes/admin/class-pwr-admin-page.php:313
+#: includes/data/class-pwr-repository.php:39
 msgid "Pending"
 msgstr "Pendente"
 
+#: includes/admin/class-pwr-admin-page.php:314
+msgid "Running"
+msgstr "Executando"
+
+#: includes/admin/class-pwr-admin-page.php:315
+#: includes/admin/class-pwr-admin-page.php:371
+msgid "Overdue"
+msgstr "Atrasadas"
+
+#: includes/admin/class-pwr-admin-page.php:316
+msgid "Oldest overdue since"
+msgstr "Atrasada mais antiga desde"
+
+#. translators: %d: number of days
+#: includes/admin/class-pwr-admin-page.php:333
+#, php-format
+msgid "Action Scheduler history (last %d days)"
+msgstr "Histórico do Action Scheduler (últimos %d dias)"
+
+#: includes/admin/class-pwr-admin-page.php:335
+msgid "No WP Rocket related scheduled actions found."
+msgstr "Nenhuma ação agendada do WP Rocket encontrada."
+
+#: includes/admin/class-pwr-admin-page.php:341
+msgid "never run"
+msgstr "nunca executado"
+
+#. translators: 1: number of successful recent runs, 2: total recent runs
+#. considered
+#: includes/admin/class-pwr-admin-page.php:349
+#, php-format
+msgid "(%1$d / %2$d succeeded recently)"
+msgstr "(%1$d / %2$d com sucesso recentemente)"
+
+#: includes/admin/class-pwr-admin-page.php:361
+msgid "WP-Cron Hooks"
+msgstr "Hooks do WP-Cron"
+
+#: includes/admin/class-pwr-admin-page.php:363
+msgid "No WP Rocket cron hooks detected."
+msgstr "Nenhum hook de cron do WP Rocket detectado."
+
+#: includes/admin/class-pwr-admin-page.php:369
+msgid "not scheduled"
+msgstr "não agendado"
+
+#: includes/admin/class-pwr-list-table.php:26
+msgid "URL"
+msgstr "URL"
+
+#: includes/admin/class-pwr-list-table.php:27
+msgid "[file]"
+msgstr "[arquivo]"
+
+#: includes/admin/class-pwr-list-table.php:28
+msgid "[cache]"
+msgstr "[cache]"
+
+#: includes/admin/class-pwr-list-table.php:29
+msgid "[css] [desktop]"
+msgstr "[css] [desktop]"
+
+#: includes/admin/class-pwr-list-table.php:30
+msgid "[css] [mobile]"
+msgstr "[css] [mobile]"
+
+#: includes/admin/class-pwr-list-table.php:31
+msgid "[lazy] [desktop]"
+msgstr "[lazy] [desktop]"
+
+#: includes/admin/class-pwr-list-table.php:32
+msgid "[lazy] [mobile]"
+msgstr "[lazy] [mobile]"
+
+#: includes/admin/class-pwr-list-table.php:33
+msgid "[priority] [desktop]"
+msgstr "[prioridade] [desktop]"
+
+#: includes/admin/class-pwr-list-table.php:34
+msgid "[priority] [mobile]"
+msgstr "[prioridade] [mobile]"
+
+#: includes/admin/class-pwr-list-table.php:35
+msgid "Last Update (any)"
+msgstr "Última atualização (qualquer)"
+
+#: includes/admin/class-pwr-list-table.php:36
+msgid "Actions"
+msgstr "Ações"
+
+#: includes/admin/class-pwr-list-table.php:80
+#: includes/integration/class-pwr-cache-inspector.php:216
+msgid "desktop"
+msgstr "desktop"
+
+#: includes/admin/class-pwr-list-table.php:82
+#: includes/integration/class-pwr-cache-inspector.php:213
+msgid "mobile"
+msgstr "mobile"
+
+#: includes/admin/class-pwr-list-table.php:89
+msgid "No cache file on disk for this variant"
+msgstr "Sem arquivo de cache no disco para esta variante"
+
+#: includes/admin/class-pwr-list-table.php:125
+msgid "Inspect"
+msgstr "Inspecionar"
+
+#: includes/admin/class-pwr-list-table.php:126
+msgid "PageSpeed"
+msgstr "PageSpeed"
+
+#: includes/data/class-pwr-repository.php:40
 msgid "In Progress"
 msgstr "Em andamento"
 
+#: includes/data/class-pwr-repository.php:41
 msgid "Completed"
 msgstr "Concluído"
 
+#: includes/data/class-pwr-repository.php:42
 msgid "Failed"
 msgstr "Falhou"
+
+#: includes/data/class-pwr-repository.php:326
+msgid "Page Cache (preload queue)"
+msgstr "Cache de página (fila de preload)"
+
+#: includes/data/class-pwr-repository.php:327
+msgid "Remove Unused CSS (Desktop)"
+msgstr "Remove Unused CSS (Desktop)"
+
+#: includes/data/class-pwr-repository.php:328
+msgid "Remove Unused CSS (Mobile)"
+msgstr "Remove Unused CSS (Mobile)"
+
+#: includes/data/class-pwr-repository.php:329
+msgid "Lazy Render (Desktop)"
+msgstr "Lazy Render (Desktop)"
+
+#: includes/data/class-pwr-repository.php:330
+msgid "Lazy Render (Mobile)"
+msgstr "Lazy Render (Mobile)"
+
+#: includes/data/class-pwr-repository.php:331
+msgid "Priority Elements (Desktop)"
+msgstr "Elementos prioritários (Desktop)"
+
+#: includes/data/class-pwr-repository.php:332
+msgid "Priority Elements (Mobile)"
+msgstr "Elementos prioritários (Mobile)"
+
+#: includes/integration/class-pwr-cache-inspector.php:124
+msgid ""
+"No data-wpr-features meta tag found in the cached file. WP Rocket omits it "
+"when white label is active, when the rocket_disable_meta_generator filter "
+"returns true, or when the page was generated with optimizations disabled "
+"(DONOTROCKETOPTIMIZE)."
+msgstr ""
+"Nenhuma meta tag data-wpr-features no arquivo em cache. O WP Rocket a omite "
+"com white label ativo, quando o filtro rocket_disable_meta_generator retorna"
+" true, ou quando a página foi gerada com otimizações desligadas "
+"(DONOTROCKETOPTIMIZE)."
+
+#: includes/integration/class-pwr-cache-inspector.php:153
+msgid "Remove Unused CSS"
+msgstr "Remove Unused CSS"
+
+#: includes/integration/class-pwr-cache-inspector.php:154
+msgid "Load CSS asynchronously (critical CSS)"
+msgstr "Carregar CSS de forma assíncrona (CSS crítico)"
+
+#: includes/integration/class-pwr-cache-inspector.php:155
+msgid "Minify CSS"
+msgstr "Minificar CSS"
+
+#: includes/integration/class-pwr-cache-inspector.php:156
+msgid "Minify JavaScript"
+msgstr "Minificar JavaScript"
+
+#: includes/integration/class-pwr-cache-inspector.php:157
+msgid "Combine JavaScript"
+msgstr "Combinar JavaScript"
+
+#: includes/integration/class-pwr-cache-inspector.php:158
+msgid "Load JavaScript deferred"
+msgstr "Carregar JavaScript com defer"
+
+#: includes/integration/class-pwr-cache-inspector.php:159
+msgid "Delay JavaScript execution"
+msgstr "Atrasar execução do JavaScript"
+
+#: includes/integration/class-pwr-cache-inspector.php:160
+msgid "LazyLoad images"
+msgstr "LazyLoad de imagens"
+
+#: includes/integration/class-pwr-cache-inspector.php:161
+msgid "LazyLoad iframes and videos"
+msgstr "LazyLoad de iframes e vídeos"
+
+#: includes/integration/class-pwr-cache-inspector.php:162
+msgid "LazyLoad CSS background images"
+msgstr "LazyLoad de imagens de fundo no CSS"
+
+#: includes/integration/class-pwr-cache-inspector.php:163
+msgid "Add missing image dimensions"
+msgstr "Adicionar dimensões ausentes nas imagens"
+
+#: includes/integration/class-pwr-cache-inspector.php:164
+msgid "CDN rewriting"
+msgstr "Reescrita para CDN"
+
+#: includes/integration/class-pwr-cache-inspector.php:165
+msgid "Preload links"
+msgstr "Preload de links"
+
+#: includes/integration/class-pwr-cache-inspector.php:166
+msgid "Self-host Google Fonts"
+msgstr "Hospedar Google Fonts localmente"
+
+#: includes/integration/class-pwr-cache-inspector.php:167
+msgid "Separate WebP cache"
+msgstr "Cache WebP separado"
+
+#: includes/integration/class-pwr-cache-inspector.php:168
+msgid "Optimize critical images (LCP / above the fold)"
+msgstr "Otimizar imagens críticas (LCP / acima da dobra)"
+
+#: includes/integration/class-pwr-cache-inspector.php:169
+msgid "Automatic lazy rendering"
+msgstr "Lazy rendering automático"
+
+#: includes/integration/class-pwr-cache-inspector.php:170
+msgid "Preconnect to external domains"
+msgstr "Preconnect para domínios externos"
+
+#: includes/integration/class-pwr-cache-inspector.php:171
+msgid "Automatic font preload"
+msgstr "Preload automático de fontes"
+
+#: includes/integration/class-pwr-cache-inspector.php:226
+msgid "dynamic cookie"
+msgstr "cookie dinâmico"
+
+#: includes/integration/class-pwr-environment.php:19
+#: includes/integration/class-pwr-environment.php:22
+msgid "WP Rocket"
+msgstr "WP Rocket"
+
+#. translators: %s: WP Rocket version
+#: includes/integration/class-pwr-environment.php:22
+#, php-format
+msgid "Version %s active."
+msgstr "Versão %s ativa."
+
+#: includes/integration/class-pwr-environment.php:49
+msgid "License"
+msgstr "Licença"
+
+#: includes/integration/class-pwr-environment.php:52
+msgid ""
+"License not validated. Without it WP Rocket does not load its front-end "
+"optimizations, and Remove Unused CSS, critical CSS and the performance hints"
+" stop working."
+msgstr ""
+"Licença não validada. Sem ela o WP Rocket não carrega as otimizações de "
+"front-end, e Remove Unused CSS, CSS crítico e os performance hints param de "
+"funcionar."
+
+#: includes/integration/class-pwr-environment.php:54
+msgid "License validated."
+msgstr "Licença validada."
+
+#: includes/integration/class-pwr-environment.php:60
+msgid "WP_CACHE is true, so WordPress loads advanced-cache.php."
+msgstr ""
+"WP_CACHE está como true, então o WordPress carrega o advanced-cache.php."
+
+#: includes/integration/class-pwr-environment.php:62
+msgid ""
+"WP_CACHE is not true in wp-config.php: the page cache is never served by PHP"
+" and WP Rocket cannot cache pages."
+msgstr ""
+"WP_CACHE não está como true no wp-config.php: o cache de página nunca é "
+"servido pelo PHP e o WP Rocket não consegue cachear páginas."
+
+#: includes/integration/class-pwr-environment.php:69
+msgid ""
+"WP Rocket reported a problem in advanced-cache.php (plugin, config or cache "
+"folder missing, or PHP too old). Pages are not being cached."
+msgstr ""
+"O WP Rocket reportou um problema no advanced-cache.php (pasta do plugin, de "
+"config ou de cache ausente, ou PHP antigo). As páginas não estão sendo "
+"cacheadas."
+
+#: includes/integration/class-pwr-environment.php:72
+msgid ""
+"wp-content/advanced-cache.php does not exist. Save WP Rocket settings to "
+"regenerate it, and check that wp-content is writable."
+msgstr ""
+"wp-content/advanced-cache.php não existe. Salve as configurações do WP "
+"Rocket para regerá-lo e confira se wp-content tem permissão de escrita."
+
+#: includes/integration/class-pwr-environment.php:76
+msgid ""
+"wp-content/advanced-cache.php belongs to another plugin or host, so WP "
+"Rocket's page cache is not the one serving pages."
+msgstr ""
+"wp-content/advanced-cache.php pertence a outro plugin ou à hospedagem, então"
+" não é o cache de página do WP Rocket que está servindo as páginas."
+
+#: includes/integration/class-pwr-environment.php:79
+msgid "The file is WP Rocket's, but it did not run on this request."
+msgstr "O arquivo é do WP Rocket, mas não rodou nesta requisição."
+
+#: includes/integration/class-pwr-environment.php:81
+msgid "WP Rocket's drop-in is installed and loaded."
+msgstr "O drop-in do WP Rocket está instalado e carregado."
+
+#: includes/integration/class-pwr-environment.php:85
+msgid "Cache config file"
+msgstr "Arquivo de configuração do cache"
+
+#. translators: %s: expected file path
+#: includes/integration/class-pwr-environment.php:90
+#, php-format
+msgid ""
+"%s not found. advanced-cache.php needs it to decide what can be cached; "
+"saving WP Rocket settings regenerates it."
+msgstr ""
+"%s não encontrado. O advanced-cache.php precisa dele para decidir o que pode"
+" ser cacheado; salvar as configurações do WP Rocket o regera."
+
+#. translators: %s: file name(s)
+#: includes/integration/class-pwr-environment.php:92
+#, php-format
+msgid "Found: %s"
+msgstr "Encontrado: %s"
+
+#: includes/integration/class-pwr-environment.php:96
+msgid "Writable folders"
+msgstr "Pastas graváveis"
+
+#. translators: %s: list of folders
+#: includes/integration/class-pwr-environment.php:113
+#, php-format
+msgid "Not writable by PHP: %s"
+msgstr "Sem permissão de escrita para o PHP: %s"
+
+#: includes/integration/class-pwr-environment.php:115
+msgid ""
+"Cache, minify, used CSS, critical CSS, busting and fonts folders are "
+"writable."
+msgstr ""
+"As pastas de cache, minify, used CSS, CSS crítico, busting e fontes têm "
+"permissão de escrita."
+
+#: includes/integration/class-pwr-environment.php:120
+msgid "Server rewrite rules"
+msgstr "Regras de rewrite do servidor"
+
+#: includes/integration/class-pwr-environment.php:122
+msgid ""
+"Nginx detected. WP Rocket does not generate Nginx rules, so every cache hit "
+"goes through PHP (advanced-cache.php) unless the server has its own rules."
+msgstr ""
+"Nginx detectado. O WP Rocket não gera regras para Nginx, então todo acerto "
+"de cache passa pelo PHP (advanced-cache.php), a menos que o servidor tenha "
+"regras próprias."
+
+#: includes/integration/class-pwr-environment.php:125
+msgid ""
+"Server is neither Apache nor Nginx; cache files are served through PHP."
+msgstr ""
+"O servidor não é Apache nem Nginx; os arquivos de cache são servidos pelo "
+"PHP."
+
+#: includes/integration/class-pwr-environment.php:128
+msgid ""
+"WP Rocket .htaccess rules are disabled by the rocket_disable_htaccess filter"
+" (common on managed hosts)."
+msgstr ""
+"As regras de .htaccess do WP Rocket estão desligadas pelo filtro "
+"rocket_disable_htaccess (comum em hospedagens gerenciadas)."
+
+#: includes/integration/class-pwr-environment.php:134
+msgid ""
+"Apache detected but .htaccess has no \"# BEGIN WP Rocket\" block: cache "
+"files are served through PHP instead of directly by Apache."
+msgstr ""
+"Apache detectado, mas o .htaccess não tem o bloco \"# BEGIN WP Rocket\": os "
+"arquivos de cache são servidos pelo PHP em vez de direto pelo Apache."
+
+#: includes/integration/class-pwr-environment.php:136
+msgid "Apache serves cache files directly from .htaccess rules."
+msgstr "O Apache serve os arquivos de cache direto pelas regras do .htaccess."
+
+#: includes/integration/class-pwr-environment.php:140
+msgid "Preload"
+msgstr "Preload"
+
+#: includes/integration/class-pwr-environment.php:142
+msgid ""
+"Preload is off. WP Rocket only updates the wpr_rocket_cache table while "
+"preload is on, so the [cache] column below may be empty or stale. Use the "
+"[file] column instead."
+msgstr ""
+"O preload está desligado. O WP Rocket só atualiza a tabela wpr_rocket_cache "
+"com o preload ligado, então a coluna [cache] abaixo pode estar vazia ou "
+"desatualizada. Use a coluna [arquivo]."
+
+#: includes/integration/class-pwr-environment.php:144
+msgid "Preload is on; the [cache] column reflects the preload queue."
+msgstr "O preload está ligado; a coluna [cache] reflete a fila de preload."
+
+#: includes/integration/class-pwr-environment.php:148
+msgid "Background queue"
+msgstr "Fila em segundo plano"
+
+#: includes/integration/class-pwr-environment.php:152
+msgid "Action Scheduler data not available."
+msgstr "Dados do Action Scheduler indisponíveis."
+
+#. translators: %d: number of overdue actions
+#: includes/integration/class-pwr-environment.php:157
+#, php-format
+msgid ""
+"%d WP Rocket action is overdue in Action Scheduler. The queue runner is not "
+"keeping up or not running (WP-Cron disabled without a system cron, blocked "
+"loopback requests, or PHP errors)."
+msgid_plural ""
+"%d WP Rocket actions are overdue in Action Scheduler. The queue runner is "
+"not keeping up or not running (WP-Cron disabled without a system cron, "
+"blocked loopback requests, or PHP errors)."
+msgstr[0] ""
+"%d ação do WP Rocket está atrasada no Action Scheduler. O executor da fila "
+"não está dando conta ou não está rodando (WP-Cron desligado sem cron do "
+"sistema, requisições de loopback bloqueadas ou erros de PHP)."
+msgstr[1] ""
+"%d ações do WP Rocket estão atrasadas no Action Scheduler. O executor da "
+"fila não está dando conta ou não está rodando (WP-Cron desligado sem cron do"
+" sistema, requisições de loopback bloqueadas ou erros de PHP)."
+
+#: includes/integration/class-pwr-environment.php:160
+msgid "No overdue WP Rocket actions in Action Scheduler."
+msgstr "Nenhuma ação do WP Rocket atrasada no Action Scheduler."
