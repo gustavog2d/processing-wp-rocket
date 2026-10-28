@@ -1,139 +1,147 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) { exit; }
+
+/**
+ * Reads WP Rocket's processing tables.
+ *
+ * WP Rocket's table/column schema can change between versions, so tables and columns are
+ * detected at runtime (get_sources()) instead of being hardcoded. Pagination, sorting and
+ * status filtering happen in SQL so the admin screen stays fast on sites with many URLs.
+ */
 class PWR_Repository {
-	public static function get_status_filters() {
-        $map = [
-            'pending'     => __( 'Pending', 'processing-wp-rocket' ),
-            'in_progress' => __( 'In Progress', 'processing-wp-rocket' ),
-            'completed'   => __( 'Completed', 'processing-wp-rocket' ),
-            'failed'      => __( 'Failed', 'processing-wp-rocket' ),
-        ];
-        return apply_filters( 'pwr_status_labels', $map );
-    }
-	/**
-	 * Return rows grouped by CANONICAL URL (scheme+host+path). One line per page URL,
-	 * aggregating Desktop/Mobile statuses for layers: cache, rucss, lazy, priority.
-	 */
-	public static function query_items( $args ) {
-		$defaults = [ 'status'=>'', 'search'=>'', 'search_mode'=>'contains', 'orderby'=>'updated', 'order'=>'desc', 'paged'=>1, 'per_page'=>20 ];
-		$args = wp_parse_args( $args, $defaults );
-		$override = apply_filters( 'pwr_repository_items', null, $args );
-		if ( is_array( $override ) && isset( $override['items'], $override['total'] ) ) { return $override; }
-		$built  = self::build_groups( $args );
-		$groups = $built['groups'];
-		$debug  = $built['debug'];
-		$list = []; $filter = (string)$args['status'];
-		foreach ( $groups as $g ) {
-			if ( $filter ) {
-				$has=false; foreach (['cache','rucss_desktop','rucss_mobile','lazy_desktop','lazy_mobile','priority_desktop','priority_mobile'] as $fld) { if ( isset($g[$fld]) && $g[$fld]===$filter ) { $has=true; break; } }
-				if ( ! $has ) continue;
-			}
-			$list[] = array_merge([
-            'cache_desktop_updated' => isset($g['cache_desktop_updated']) ? $g['cache_desktop_updated'] : '',
-            'cache_mobile_updated'  => isset($g['cache_mobile_updated']) ? $g['cache_mobile_updated'] : '',
-            'rucss_desktop_updated' => isset($g['rucss_desktop_updated']) ? $g['rucss_desktop_updated'] : '',
-            'rucss_mobile_updated'  => isset($g['rucss_mobile_updated']) ? $g['rucss_mobile_updated'] : '',
-            'lazy_desktop_updated'  => isset($g['lazy_desktop_updated']) ? $g['lazy_desktop_updated'] : '',
-            'lazy_mobile_updated'   => isset($g['lazy_mobile_updated']) ? $g['lazy_mobile_updated'] : '',
-            'priority_desktop_updated' => isset($g['priority_desktop_updated']) ? $g['priority_desktop_updated'] : '',
-            'priority_mobile_updated'  => isset($g['priority_mobile_updated']) ? $g['priority_mobile_updated'] : '',
-        ], $g);
-		}
-		$orderby = in_array( $args['orderby'], [ 'url','updated' ], true ) ? $args['orderby'] : 'updated';
-		usort( $list, function( $a, $b ) use ( $orderby, $args ) {
-			$ord = strtolower( $args['order'] ) === 'asc' ? 1 : -1;
-			$va = $a[ $orderby ] ?? ''; $vb = $b[ $orderby ] ?? '';
-			if ( $orderby === 'updated' ) { return ( strtotime( $va ) <=> strtotime( $vb ) ) * $ord; }
-			return ( $va <=> $vb ) * $ord;
-		});
-		$total = count($list); $per=(int)$args['per_page']; $off=max(0,((int)$args['paged']-1)*$per);
-		$items = array_slice($list,$off,$per);
-		if ( isset($_GET['pwr_debug']) && current_user_can( pwr_min_cap() ) ) { return [ 'items'=>$items, 'total'=>$total, 'debug'=>$debug ]; }
-		return [ 'items'=>$items, 'total'=>$total ];
-	}
-	/**
-	 * Scan candidate WP Rocket tables and group raw rows by canonical URL.
-	 * Shared by query_items() (paginated/filtered) and get_health_report() (whole-site, unfiltered).
-	 */
-	private static function build_groups( array $args ) {
-		global $wpdb;
-		$candidates = apply_filters( 'pwr_tables', [ 'wpr_rucss_used_css','wpr_rocket_cache','wpr_lazy_render_content','wpr_above_the_fold' ] );
-		$url_cols     = [ 'url','page_url','permalink','path','source','request_uri' ];
-		$status_cols  = [ 'status','state','processing_status','result','flag' ];
-		$updated_cols = [ 'updated','updated_at','last_update','last_updated','last_modified','modified','date','timestamp','created_at' ];
-		$device_cols  = [ 'device','context','form_factor','platform','is_mobile','ua','client' ];
-		$search      = isset( $args['search'] ) ? (string) $args['search'] : '';
-		$search_mode = isset( $args['search_mode'] ) ? (string) $args['search_mode'] : 'contains';
-		$rows = []; $debug = [ 'detected'=>[] ];
-		foreach ( $candidates as $raw ) {
-			$table = $wpdb->prefix . $raw;
-			if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) continue;
-			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
-			if ( $exists !== $table ) continue;
-			$cols = $wpdb->get_results( "SHOW COLUMNS FROM `{$table}`" );
-			if ( empty( $cols ) ) continue;
-			$all = array_map( static function( $c ){ return isset( $c->Field ) ? (string) $c->Field : ''; }, $cols );
-			$col_url     = self::first_existing( $all, $url_cols );
-			$col_status  = self::first_existing( $all, $status_cols );
-			$col_updated = self::first_existing( $all, $updated_cols );
-			$col_device  = self::first_existing( $all, $device_cols );
-			if ( ! $col_url ) continue;
-			$where='1=1'; $params=[];
-			if ( '' !== $search ) {
-				if ( 'exact' === $search_mode ) {
-					$where.=" AND `{$table}`.`{$col_url}` = %s"; $params[]=$search;
-				} else {
-					$where.=" AND `{$table}`.`{$col_url}` LIKE %s"; $params[]='%'.$wpdb->esc_like( $search ).'%';
-				}
-			}
-			$selects = [
-				"`{$table}`.`{$col_url}` AS url",
-				$col_status  ? "`{$table}`.`{$col_status}` AS status"   : "'' AS status",
-				$col_updated ? "`{$table}`.`{$col_updated}` AS updated" : "'' AS updated",
-				$col_device  ? "`{$table}`.`{$col_device}` AS device"   : "'' AS device",
-				"'". esc_sql( self::guess_layer( $raw ) ) ."' AS layer",
-			];
-			$sql = "SELECT ".implode(', ',$selects)." FROM `{$table}` WHERE {$where}";
-			$sql = $wpdb->prepare( $sql, $params );
-			$res = (array) $wpdb->get_results( $sql, ARRAY_A );
-			foreach ( $res as $r ) { $rows[] = $r; }
-			$debug['detected'][] = [ 'table'=>$table,'layer'=>self::guess_layer($raw),'url_col'=>$col_url,'status_col'=>$col_status,'updated_col'=>$col_updated,'device_col'=>$col_device,'count'=>count($res) ];
-		}
-		// Group by canonical URL (scheme+host+path), ignoring query/fragment; lowercase host.
-		$groups = [];
-		foreach ( $rows as $r ) {
-			$full = isset($r['url'])?(string)$r['url']:''; if ($full==='') continue;
-			$key = self::canonical_key($full); if ($key==='') continue;
-			if ( ! isset($groups[$key]) ) {
-				$groups[$key] = [ 'url'=>$full,
-					'cache'=>'','rucss_desktop'=>'','rucss_mobile'=>'',
-					'lazy_desktop'=>'','lazy_mobile'=>'','priority_desktop'=>'','priority_mobile'=>'','updated'=>'' ];
-			}
-			$device = self::map_device( isset($r['device'])?(string)$r['device']:'' ); if (!$device) $device='desktop';
-			$layer  = isset($r['layer'])?(string)$r['layer']:'cache';
-			$status = isset($r['status'])?(string)$r['status']:'';
-			$upd    = isset($r['updated'])?(string)$r['updated']:'';
-			$field = ( $layer === 'cache' ) ? 'cache' : ( $layer . '_' . $device );
-			$groups[$key][$field] = self::pick_status( $groups[$key][$field], $status );
-
-            // Track per-field latest updated date
-            if ( ! isset( $groups[$key][ $field . '_updated' ] ) ) { $groups[$key][ $field . '_updated' ] = ''; }
-            if ( $upd && ( empty( $groups[$key][ $field . '_updated' ] ) || strtotime( $upd ) > strtotime( $groups[$key][ $field . '_updated' ] ) ) ) {
-                $groups[$key][ $field . '_updated' ] = $upd;
-            }
-			if ( $upd && ( empty($groups[$key]['updated']) || strtotime($upd) > strtotime($groups[$key]['updated']) ) ) {
-				$groups[$key]['updated'] = $upd;
-			}
-		}
-		return [ 'groups' => $groups, 'debug' => $debug ];
-	}
-
 	const HEALTH_TRANSIENT = 'pwr_health_report';
 
+	/** Logical layers the UI knows how to display. */
+	const LAYERS = [ 'cache', 'rucss', 'lazy', 'priority' ];
+
+	/** Per-layer/device fields shown in the table and the health panel. */
+	const FIELDS = [ 'cache', 'rucss_desktop', 'rucss_mobile', 'lazy_desktop', 'lazy_mobile', 'priority_desktop', 'priority_mobile' ];
+
 	/**
-	 * Site-wide status breakdown per layer/device. Always scans the whole site (no search/status
-	 * filter, no pagination) so it reads as a stable health snapshot. Cached via transient because
-	 * it requires an unpaginated scan of every matched row.
+	 * Raw status values (lowercase) mapped to the canonical set. WP Rocket itself writes
+	 * `to-submit`, `pending`, `in-progress`, `completed` and `failed`.
+	 */
+	const STATUS_SYNONYMS = [
+		'pending'     => [ 'pending', 'to-submit', 'to_submit', 'aguardando', 'pendente' ],
+		'in_progress' => [ 'in_progress', 'in-progress', 'in progress', 'processing', 'in_process', 'processando', 'em processamento', 'queued', 'queue', 'running' ],
+		'completed'   => [ 'completed', 'complete', 'done', 'ok', 'success', 'sucesso' ],
+		'failed'      => [ 'failed', 'fail', 'error', 'erro' ],
+	];
+
+	/** Rank used when two rows resolve to the same field: the most actionable status wins. */
+	const STATUS_RANK = [ 'failed' => 4, 'in_progress' => 3, 'pending' => 2, 'completed' => 1 ];
+
+	/** @var array|null Memoized result of get_sources(). */
+	private static $sources = null;
+
+	public static function get_status_filters() {
+		$map = [
+			'pending'     => __( 'Pending', 'processing-wp-rocket' ),
+			'in_progress' => __( 'In Progress', 'processing-wp-rocket' ),
+			'completed'   => __( 'Completed', 'processing-wp-rocket' ),
+			'failed'      => __( 'Failed', 'processing-wp-rocket' ),
+		];
+		return apply_filters( 'pwr_status_labels', $map );
+	}
+
+	/**
+	 * Detects which candidate tables exist and which columns hold each piece of data.
+	 *
+	 * @return array[] One entry per usable table: table, raw, layer, cols (logical name => column or '').
+	 */
+	public static function get_sources( $refresh = false ) {
+		if ( null !== self::$sources && ! $refresh ) {
+			return self::$sources;
+		}
+		global $wpdb;
+		$candidates = apply_filters( 'pwr_tables', [ 'wpr_rocket_cache', 'wpr_rucss_used_css', 'wpr_lazy_render_content', 'wpr_above_the_fold' ] );
+		$col_map    = [
+			'url'             => [ 'url', 'page_url', 'permalink', 'path', 'source', 'request_uri' ],
+			'status'          => [ 'status', 'state', 'processing_status', 'result', 'flag' ],
+			'updated'         => [ 'modified', 'updated', 'updated_at', 'last_update', 'last_updated', 'last_modified', 'date', 'timestamp', 'created_at' ],
+			'device'          => [ 'is_mobile', 'device', 'context', 'form_factor', 'platform', 'ua', 'client' ],
+			'error_code'      => [ 'error_code' ],
+			'error_message'   => [ 'error_message' ],
+			'retries'         => [ 'retries' ],
+			'next_retry_time' => [ 'next_retry_time' ],
+			'submitted_at'    => [ 'submitted_at' ],
+		];
+		$sources = [];
+		foreach ( (array) $candidates as $raw ) {
+			$raw   = (string) $raw;
+			$table = $wpdb->prefix . $raw;
+			if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) { continue; }
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( $exists !== $table ) { continue; }
+			$columns = $wpdb->get_results( "SHOW COLUMNS FROM `{$table}`" );
+			if ( empty( $columns ) ) { continue; }
+			$all  = array_map( static function ( $c ) { return isset( $c->Field ) ? (string) $c->Field : ''; }, $columns );
+			$cols = [];
+			foreach ( $col_map as $logical => $options ) {
+				$cols[ $logical ] = self::first_existing( $all, $options );
+			}
+			if ( '' === $cols['url'] ) { continue; }
+			$sources[] = [
+				'table' => $table,
+				'raw'   => $raw,
+				'layer' => self::guess_layer( $raw ),
+				'cols'  => $cols,
+			];
+		}
+		self::$sources = $sources;
+		return $sources;
+	}
+
+	/**
+	 * One page of URLs for the list table, one row per URL with every layer/device status.
+	 */
+	public static function query_items( $args ) {
+		$defaults = [ 'status' => '', 'search' => '', 'search_mode' => 'contains', 'orderby' => 'updated', 'order' => 'desc', 'paged' => 1, 'per_page' => 20 ];
+		$args     = wp_parse_args( $args, $defaults );
+		$override = apply_filters( 'pwr_repository_items', null, $args );
+		if ( is_array( $override ) && isset( $override['items'], $override['total'] ) ) { return $override; }
+
+		global $wpdb;
+		$sources = self::get_sources();
+		$status  = array_key_exists( (string) $args['status'], self::STATUS_SYNONYMS ) ? (string) $args['status'] : '';
+		$union   = self::union_sql( $sources, (string) $args['search'], (string) $args['search_mode'], $status );
+		if ( '' === $union ) { return [ 'items' => [], 'total' => 0 ]; }
+
+		$order    = 'asc' === strtolower( (string) $args['order'] ) ? 'ASC' : 'DESC';
+		$order_by = 'url' === $args['orderby'] ? 'url' : 'MAX(updated)';
+		$per      = max( 1, (int) $args['per_page'] );
+		$offset   = max( 0, ( (int) $args['paged'] - 1 ) * $per );
+
+		// The union is already escaped/prepared; LIMIT/OFFSET are cast to int, so no second prepare().
+		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM ( SELECT url FROM ( {$union} ) u GROUP BY url ) c" );
+		$page  = $wpdb->get_results( "SELECT url, MAX(updated) AS updated FROM ( {$union} ) u GROUP BY url ORDER BY {$order_by} {$order}, url ASC LIMIT {$per} OFFSET {$offset}", ARRAY_A );
+		if ( $wpdb->last_error ) {
+			return [ 'items' => [], 'total' => 0, 'error' => $wpdb->last_error ];
+		}
+
+		$urls  = array_values( array_filter( array_map( static function ( $r ) { return (string) $r['url']; }, (array) $page ) ) );
+		$rows  = self::fetch_rows( $sources, $urls );
+		$items = [];
+		foreach ( $urls as $url ) {
+			$items[] = self::build_item( $url, isset( $rows[ $url ] ) ? $rows[ $url ] : [] );
+		}
+		return [ 'items' => $items, 'total' => $total ];
+	}
+
+	/**
+	 * Every layer/device status (with error details) for a single URL. Used by the inspector.
+	 */
+	public static function get_item_for_url( $url ) {
+		$url      = (string) $url;
+		$variants = array_values( array_unique( [ $url, untrailingslashit( $url ), trailingslashit( $url ) ] ) );
+		$rows     = self::fetch_rows( self::get_sources(), $variants );
+		$merged   = [];
+		foreach ( $rows as $list ) { $merged = array_merge( $merged, $list ); }
+		return self::build_item( untrailingslashit( $url ), $merged );
+	}
+
+	/**
+	 * Site-wide status breakdown per layer/device, computed with GROUP BY queries.
 	 */
 	public static function get_health_report( $force_refresh = false ) {
 		if ( $force_refresh ) { delete_transient( self::HEALTH_TRANSIENT ); }
@@ -142,48 +150,180 @@ class PWR_Repository {
 			$cached['from_cache'] = true;
 			return $cached;
 		}
-		$built  = self::build_groups( [ 'search' => '', 'search_mode' => 'contains' ] );
-		$groups = $built['groups'];
-		$fields  = [ 'cache','rucss_desktop','rucss_mobile','lazy_desktop','lazy_mobile','priority_desktop','priority_mobile' ];
-		$buckets = [ 'pending','in_progress','completed','failed','other' ];
-		$labels  = self::field_labels();
-		$report_fields = [];
-		foreach ( $fields as $field ) {
-			$counts  = array_fill_keys( $buckets, 0 );
-			$tracked = 0;
-			foreach ( $groups as $g ) {
-				$raw = isset( $g[ $field ] ) ? (string) $g[ $field ] : '';
-				if ( '' === $raw ) { continue; }
-				$tracked++;
-				$norm   = self::normalize_status( $raw );
-				$bucket = in_array( $norm, [ 'pending','in_progress','completed','failed' ], true ) ? $norm : 'other';
-				$counts[ $bucket ]++;
+		global $wpdb;
+		$buckets = [ 'pending', 'in_progress', 'completed', 'failed', 'other' ];
+		$counts  = [];
+		foreach ( self::FIELDS as $field ) { $counts[ $field ] = array_fill_keys( $buckets, 0 ); }
+
+		$sources = self::get_sources();
+		foreach ( $sources as $s ) {
+			if ( ! in_array( $s['layer'], self::LAYERS, true ) ) { continue; }
+			$status_expr = $s['cols']['status'] ? "LOWER(TRIM(`{$s['cols']['status']}`))" : "''";
+			$device_expr = $s['cols']['device'] ? "`{$s['cols']['device']}`" : "''";
+			$res         = $wpdb->get_results( "SELECT {$status_expr} AS status, {$device_expr} AS device, COUNT(DISTINCT `{$s['cols']['url']}`) AS n FROM `{$s['table']}` GROUP BY 1, 2", ARRAY_A );
+			foreach ( (array) $res as $r ) {
+				$device = self::map_device( (string) $r['device'] );
+				$field  = 'cache' === $s['layer'] ? 'cache' : $s['layer'] . '_' . ( $device ? $device : 'desktop' );
+				if ( ! isset( $counts[ $field ] ) ) { continue; }
+				$norm   = self::normalize_status( (string) $r['status'] );
+				$bucket = in_array( $norm, $buckets, true ) && 'other' !== $norm ? $norm : 'other';
+				$counts[ $field ][ $bucket ] += (int) $r['n'];
 			}
+		}
+
+		$union      = self::union_sql( $sources, '', 'contains', '' );
+		$total_urls = '' === $union ? 0 : (int) $wpdb->get_var( "SELECT COUNT(*) FROM ( SELECT url FROM ( {$union} ) u GROUP BY url ) c" );
+		$cache_base = array_sum( $counts['cache'] );
+		$labels     = self::field_labels();
+		$fields     = [];
+		foreach ( self::FIELDS as $field ) {
+			$tracked     = array_sum( $counts[ $field ] );
 			$percentages = [];
 			foreach ( $buckets as $b ) {
-				$percentages[ $b ] = $tracked > 0 ? round( ( $counts[ $b ] / $tracked ) * 100, 1 ) : 0.0;
+				$percentages[ $b ] = $tracked > 0 ? round( ( $counts[ $field ][ $b ] / $tracked ) * 100, 1 ) : 0.0;
 			}
-			$report_fields[ $field ] = [
+			$fields[ $field ] = [
 				'label'       => isset( $labels[ $field ] ) ? $labels[ $field ] : $field,
 				'tracked'     => $tracked,
-				'counts'      => $counts,
+				'counts'      => $counts[ $field ],
 				'percentages' => $percentages,
+				// Share of cached URLs that also have a row in this layer (null for the cache row itself).
+				'coverage'    => ( 'cache' !== $field && $cache_base > 0 ) ? round( min( 100, ( $tracked / $cache_base ) * 100 ), 1 ) : null,
 			];
 		}
-		$report = [
-			'total_urls'   => count( $groups ),
-			'fields'       => $report_fields,
-			'generated_at' => time(),
-		];
-		$ttl = (int) apply_filters( 'pwr_health_cache_ttl', 5 * MINUTE_IN_SECONDS );
-		set_transient( self::HEALTH_TRANSIENT, $report, $ttl );
+		$report = [ 'total_urls' => $total_urls, 'fields' => $fields, 'generated_at' => time() ];
+		set_transient( self::HEALTH_TRANSIENT, $report, (int) apply_filters( 'pwr_health_cache_ttl', 5 * MINUTE_IN_SECONDS ) );
 		$report['from_cache'] = false;
 		return $report;
 	}
 
-	private static function field_labels() {
+	public static function normalize_status( $val ) {
+		$v = strtolower( trim( (string) $val ) );
+		if ( '' === $v ) { return ''; }
+		foreach ( self::STATUS_SYNONYMS as $slug => $synonyms ) {
+			if ( in_array( $v, $synonyms, true ) ) { return $slug; }
+		}
+		return $v;
+	}
+
+	public static function label_for_status( $slug ) {
+		$slug   = self::normalize_status( $slug );
+		$labels = self::get_status_filters();
+		return isset( $labels[ $slug ] ) ? $labels[ $slug ] : $slug;
+	}
+
+	public static function map_device( $raw ) {
+		$val = strtolower( trim( (string) $raw ) );
+		if ( '' === $val ) { return ''; }
+		if ( in_array( $val, [ 'mobile', 'm', 'phone', 'handset', 'tablet', '1', 'true', 'yes' ], true ) ) { return 'mobile'; }
+		if ( in_array( $val, [ 'desktop', 'd', 'pc', '0', 'false', 'no' ], true ) ) { return 'desktop'; }
+		if ( false !== strpos( $val, 'desktop' ) ) { return 'desktop'; }
+		if ( false !== strpos( $val, 'mobile' ) ) { return 'mobile'; }
+		return '';
+	}
+
+	/** True for empty values and MySQL zero dates, which WP Rocket uses as column defaults. */
+	public static function is_empty_date( $value ) {
+		$value = trim( (string) $value );
+		return '' === $value || 0 === strpos( $value, '0000-00-00' );
+	}
+
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * UNION ALL of (url, updated) across all sources with search/status filters applied.
+	 * Values are escaped through $wpdb->prepare(); the result must not be prepared again.
+	 */
+	private static function union_sql( array $sources, $search, $search_mode, $status ) {
+		global $wpdb;
+		$parts = [];
+		foreach ( $sources as $s ) {
+			$url_col = "`{$s['cols']['url']}`";
+			$where   = '1=1';
+			if ( '' !== $search ) {
+				if ( 'exact' === $search_mode ) {
+					// WP Rocket stores URLs without the trailing slash; accept both spellings.
+					$where .= $wpdb->prepare( " AND {$url_col} IN (%s, %s)", untrailingslashit( $search ), trailingslashit( $search ) );
+				} else {
+					$where .= $wpdb->prepare( " AND {$url_col} LIKE %s", '%' . $wpdb->esc_like( $search ) . '%' );
+				}
+			}
+			if ( '' !== $status ) {
+				if ( ! $s['cols']['status'] ) { continue; }
+				$raws         = self::STATUS_SYNONYMS[ $status ];
+				$placeholders = implode( ', ', array_fill( 0, count( $raws ), '%s' ) );
+				$where       .= $wpdb->prepare( " AND LOWER(TRIM(`{$s['cols']['status']}`)) IN ({$placeholders})", $raws );
+			}
+			$updated = $s['cols']['updated'] ? "`{$s['cols']['updated']}`" : 'NULL';
+			$parts[] = "SELECT {$url_col} AS url, {$updated} AS updated FROM `{$s['table']}` WHERE {$where}";
+		}
+		return implode( ' UNION ALL ', $parts );
+	}
+
+	/**
+	 * Raw rows for a set of URLs, grouped by URL.
+	 *
+	 * @return array<string, array[]>
+	 */
+	private static function fetch_rows( array $sources, array $urls ) {
+		global $wpdb;
+		$out = [];
+		if ( empty( $urls ) ) { return $out; }
+		$placeholders = implode( ', ', array_fill( 0, count( $urls ), '%s' ) );
+		foreach ( $sources as $s ) {
+			$selects = [ "`{$s['cols']['url']}` AS url", "'" . esc_sql( $s['layer'] ) . "' AS layer" ];
+			foreach ( [ 'status', 'updated', 'device', 'error_code', 'error_message', 'retries', 'next_retry_time', 'submitted_at' ] as $logical ) {
+				$selects[] = $s['cols'][ $logical ] ? "`{$s['cols'][ $logical ]}` AS {$logical}" : "'' AS {$logical}";
+			}
+			$sql = $wpdb->prepare( 'SELECT ' . implode( ', ', $selects ) . " FROM `{$s['table']}` WHERE `{$s['cols']['url']}` IN ({$placeholders})", $urls );
+			foreach ( (array) $wpdb->get_results( $sql, ARRAY_A ) as $r ) {
+				$out[ (string) $r['url'] ][] = $r;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Collapses raw rows of one URL into the item shape used by the list table and inspector.
+	 */
+	private static function build_item( $url, array $rows ) {
+		$item = [ 'url' => $url, 'updated' => '', 'errors' => [], 'raw' => [] ];
+		foreach ( self::FIELDS as $field ) {
+			$item[ $field ]              = '';
+			$item[ $field . '_updated' ] = '';
+		}
+		foreach ( $rows as $r ) {
+			if ( ! in_array( $r['layer'], self::LAYERS, true ) ) { continue; }
+			$device = self::map_device( (string) $r['device'] );
+			$field  = 'cache' === $r['layer'] ? 'cache' : $r['layer'] . '_' . ( $device ? $device : 'desktop' );
+			$status = (string) $r['status'];
+			$upd    = self::is_empty_date( $r['updated'] ) ? '' : (string) $r['updated'];
+
+			$item[ $field ] = self::pick_status( $item[ $field ], $status );
+			if ( $upd && ( '' === $item[ $field . '_updated' ] || strtotime( $upd ) > strtotime( $item[ $field . '_updated' ] ) ) ) {
+				$item[ $field . '_updated' ] = $upd;
+			}
+			if ( $upd && ( '' === $item['updated'] || strtotime( $upd ) > strtotime( $item['updated'] ) ) ) {
+				$item['updated'] = $upd;
+			}
+			$message = trim( (string) $r['error_message'] );
+			$code    = trim( (string) $r['error_code'] );
+			if ( '' !== $message || '' !== $code ) {
+				$item['errors'][ $field ] = [
+					'code'       => $code,
+					'message'    => $message,
+					'retries'    => (string) $r['retries'],
+					'next_retry' => self::is_empty_date( $r['next_retry_time'] ) ? '' : (string) $r['next_retry_time'],
+				];
+			}
+			$item['raw'][ $field ] = $r;
+		}
+		return $item;
+	}
+
+	public static function field_labels() {
 		$labels = [
-			'cache'            => __( 'Page Cache', 'processing-wp-rocket' ),
+			'cache'            => __( 'Page Cache (preload queue)', 'processing-wp-rocket' ),
 			'rucss_desktop'    => __( 'Remove Unused CSS (Desktop)', 'processing-wp-rocket' ),
 			'rucss_mobile'     => __( 'Remove Unused CSS (Mobile)', 'processing-wp-rocket' ),
 			'lazy_desktop'     => __( 'Lazy Render (Desktop)', 'processing-wp-rocket' ),
@@ -194,66 +334,27 @@ class PWR_Repository {
 		return apply_filters( 'pwr_health_field_labels', $labels );
 	}
 
-	private static function first_existing( array $all, array $priority ) { foreach ( $priority as $c ) { if ( in_array( $c, $all, true ) ) return $c; } return ''; }
-	private static function canonical_key( $url ) {
-		$p = wp_parse_url( $url ); if ( empty( $p ) ) return '';
-		$scheme = isset($p['scheme']) ? strtolower($p['scheme']) : 'https';
-		$host   = isset($p['host']) ? strtolower($p['host']) : '';
-		$path   = isset($p['path']) ? $p['path'] : '/';
-		return $scheme . '://' . $host . $path;
-	}
-	private static function map_device( $raw ) {
-		$val = strtolower( trim( (string) $raw ) );
-		if ( $val === '' ) return '';
-		if ( in_array( $val, [ 'mobile','m','phone' ], true ) ) return 'mobile';
-		if ( in_array( $val, [ 'desktop','d','pc' ], true ) ) return 'desktop';
-		if ( in_array( $val, [ '1','true','yes' ], true ) ) return 'mobile';
-		if ( in_array( $val, [ '0','false','no' ], true ) ) return 'desktop';
-		if ( strpos( $val, 'desktop' ) !== false ) return 'desktop';
-		if ( strpos( $val, 'mobile' ) !== false ) return 'mobile';
-		if ( in_array( $val, [ 'phone','handset','tablet' ], true ) ) return 'mobile';
+	private static function first_existing( array $all, array $priority ) {
+		foreach ( $priority as $c ) { if ( in_array( $c, $all, true ) ) { return $c; } }
 		return '';
 	}
-	public static function label_for_status( $slug ) {
-        $slug = strtolower( (string) $slug );
-        $labels = self::get_status_filters();
-        return isset( $labels[ $slug ] ) ? $labels[ $slug ] : $slug;
-    }
-    private static function normalize_status( $val ) {
-        $v = strtolower( trim( (string) $val ) );
-        if ( $v === '' ) return '';
-        // synonyms
-        if ( in_array( $v, [ 'in progress','in-progress','processing','in_process','processando','em processamento','queued','queue' ], true ) ) return 'in_progress';
-        if ( in_array( $v, [ 'done','completed','complete','ok','sucesso','success' ], true ) ) return 'completed';
-        if ( in_array( $v, [ 'fail','failed','erro','error' ], true ) ) return 'failed';
-        if ( in_array( $v, [ 'pending','to-submit','to_submit','aguardando','pendente' ], true ) ) return 'pending';
-        return $v;
-    }
-    private static function adjust_datetime( $val ) {
-        $val = trim( (string) $val );
-        if ( $val === '' ) return '';
-        $ts = strtotime( $val );
-        if ( ! $ts ) return $val;
-        try {
-            $dt = new DateTime( '@' . $ts );
-            $dt->setTimezone( wp_timezone() );
-            return $dt->format( 'Y-m-d H:i:s' );
-        } catch ( Exception $e ) {
-            return $val;
-        }
-    }
-    private static function pick_status( $current, $incoming ) {
-		$cur = self::normalize_status( $current ); $inc = self::normalize_status( $incoming );
-		if ( $inc === '' ) return $current; if ( $cur === '' ) return $incoming;
-		$rank = [ 'failed'=>3, 'in_progress'=>2, 'done'=>1 ];
-		$rc = $rank[$cur] ?? 0; $ri = $rank[$inc] ?? 0;
+
+	private static function pick_status( $current, $incoming ) {
+		$cur = self::normalize_status( $current );
+		$inc = self::normalize_status( $incoming );
+		if ( '' === $inc ) { return $current; }
+		if ( '' === $cur ) { return $incoming; }
+		$rc = isset( self::STATUS_RANK[ $cur ] ) ? self::STATUS_RANK[ $cur ] : 0;
+		$ri = isset( self::STATUS_RANK[ $inc ] ) ? self::STATUS_RANK[ $inc ] : 0;
 		return ( $ri > $rc ) ? $incoming : $current;
 	}
+
 	private static function guess_layer( $raw ) {
-		if ( strpos($raw,'rucss') !== false ) return 'rucss';
-		if ( strpos($raw,'lazy') !== false ) return 'lazy';
-		if ( strpos($raw,'above_the_fold') !== false ) return 'priority';
-		if ( strpos($raw,'cache') !== false ) return 'cache';
-		return 'cache';
+		if ( false !== strpos( $raw, 'rucss' ) ) { return 'rucss'; }
+		if ( false !== strpos( $raw, 'lazy_render' ) ) { return 'lazy'; }
+		if ( false !== strpos( $raw, 'above_the_fold' ) ) { return 'priority'; }
+		if ( false !== strpos( $raw, 'rocket_cache' ) ) { return 'cache'; }
+		// Unknown tables added through `pwr_tables` keep their own name and are not mapped to a column.
+		return sanitize_key( $raw );
 	}
 }

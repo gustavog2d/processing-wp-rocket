@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Processing WP Rocket is a WordPress admin plugin (not affiliated with WP Rocket) that reads WP Rocket's internal database tables and displays per-URL cache processing status in a `WP_List_Table`. It is read-only by design in its current UI: it does not clear caches or change WP Rocket settings (older purge/clear code paths still exist internally — see "Known quirks" below).
+Processing WP Rocket is a WordPress admin plugin (not affiliated with WP Rocket) that reads WP Rocket's internal database tables, cache files and environment, and shows per-URL processing status, what was actually applied to each cached page, and whether the server/queues are healthy. It is strictly read-only: since 2.2.0 there is no purge/clear code at all.
 
-There is no build system, package manager, or test suite in this repo — it's plain PHP/JS/CSS loaded directly by WordPress. There are no linting or formatting configs either.
+There is no build system, package manager, or test suite in this repo — it's plain PHP/CSS loaded directly by WordPress. There are no linting or formatting configs either.
 
 ## Running / testing changes
 
@@ -14,40 +14,39 @@ There's no CLI build or test command. To verify changes:
 1. Symlink or copy this directory into a WordPress install's `wp-content/plugins/`.
 2. Activate **Processing WP Rocket** in WP Admin (requires WP Rocket active for real data; the admin table itself renders regardless).
 3. Visit **Tools → Processing WP Rocket**.
-4. Append `?pwr_debug=1` to the admin page URL (while logged in as a `manage_options` user) to see a debug panel listing which WP Rocket tables were detected, and which URL/status/updated/device columns were matched in each.
+4. Append `?pwr_debug=1` to the admin page URL (while logged in as a `manage_options` user) to see the detected sources (`PWR_Repository::get_sources()`): tables, layers and matched columns.
+5. Without a WP Rocket license you can still test locally: set `consumer_email`, an 8-character `consumer_key` and `secret_key = hash( 'crc32', consumer_email )` in the `wp_rocket_settings` option (and remove `licence-data.php` from the WP Rocket copy so its constants don't override them). Front-end optimizations then run; SaaS features (RUCSS, CPCSS) won't complete offline, so insert rows into their tables to exercise those states.
 
 ## Architecture
 
 **Bootstrapping**: `processing-wp-rocket.php` defines constants (`PWR_VERSION`, `PWR_DIR`, `PWR_URL`), loads `includes/helpers.php`, then instantiates the `PWR_Plugin` singleton (`includes/class-pwr-plugin.php`). That singleton's constructor manually `require_once`s every other class file — there is no autoloader. When adding a new class file, register it there.
 
-**Data flow**: `PWR_Repository::build_groups()` (`includes/data/class-pwr-repository.php`) is the core of the plugin — a private helper shared by both `query_items()` (paginated/filtered list table data) and `get_health_report()` (whole-site health snapshot). Because WP Rocket's table/column schema varies across versions/sites, it does *dynamic schema detection* rather than assuming fixed columns:
-- Scans a filterable list of candidate tables (`pwr_tables` filter, default `wpr_rucss_used_css`, `wpr_rocket_cache`, `wpr_lazy_render_content`, `wpr_above_the_fold`) prefixed with `$wpdb->prefix`, and skips any that don't exist via `SHOW TABLES LIKE`.
-- For each table found, inspects `SHOW COLUMNS` and picks the first matching column name from priority lists (`$url_cols`, `$status_cols`, `$updated_cols`, `$device_cols`) — e.g. `updated_cols` tries `updated`, `updated_at`, `last_update`, etc. in order.
-- A table is skipped entirely if no URL column is found.
-- The `search`/`search_mode` args control the WHERE clause: `search_mode = 'contains'` (default) does `LIKE %term%`, `search_mode = 'exact'` does a plain `=` equality match against the same raw URL column shown in the URL column — used by the search screen's "Exact match" checkbox to isolate a single URL (e.g. the home page) instead of matching every URL under the same domain.
-- `guess_layer()` maps table name → logical layer (`cache`, `rucss`, `lazy`, `priority`) by substring match on the table name.
-- Rows are then grouped by **canonical URL** (`canonical_key()`: lowercased scheme+host+path, ignoring query/fragment) into one row per page, with separate desktop/mobile fields per layer (cache is not split by device). `pick_status()` resolves conflicting statuses for the same field using a rank (`failed` > `in_progress` > `done`), and per-field `*_updated` timestamps track the latest update per layer/device.
-- Status strings are normalized via `normalize_status()` (synonym mapping including Portuguese terms like `sucesso`, `pendente`) into the canonical set `pending` / `in_progress` / `completed` / `failed`.
+**Data flow**: `PWR_Repository` (`includes/data/class-pwr-repository.php`) is the core. Because WP Rocket's table/column schema varies across versions, it does *dynamic schema detection* in `get_sources()` (memoized per request):
+- Scans the `pwr_tables` filter list (default `wpr_rocket_cache`, `wpr_rucss_used_css`, `wpr_lazy_render_content`, `wpr_above_the_fold`) prefixed with `$wpdb->prefix`, skipping missing tables via `SHOW TABLES LIKE`.
+- For each table, picks the first existing column from priority lists for `url`, `status`, `updated` (`modified` first), `device` (`is_mobile` first) and the optional error columns `error_code`, `error_message`, `retries`, `next_retry_time`, `submitted_at`. Tables without a URL column are skipped.
+- `guess_layer()` maps the table name to a layer (`cache`, `rucss`, `lazy`, `priority`); unknown tables keep their own name and are ignored by the UI fields.
 
-`query_items()` additionally supports the `pwr_repository_items` filter (return `['items' => ..., 'total' => ...]` to short-circuit the DB query entirely) — `get_health_report()` does **not** honor this filter, since its contract is raw per-URL group data, not a finished list-table page; it always reads the tables live (subject to its own cache, below).
+`query_items()` builds a `UNION ALL` of `(url, updated)` across all sources with search/status filters applied (each fragment escaped with `$wpdb->prepare()`), then runs `COUNT` and a `GROUP BY url ... LIMIT/OFFSET` page query in SQL. **The union string is already prepared — never pass it through `prepare()` again** (literal `%` from LIKE values would break). Only the current page's URLs are then fetched in full (`fetch_rows()`) and collapsed by `build_item()` into one item per URL with `{field}`, `{field}_updated` and `errors[{field}]` for the fields in `PWR_Repository::FIELDS`. The `pwr_repository_items` filter can still short-circuit everything. Returns an `error` key when the SQL fails (shown as an admin notice).
 
-`PWR_Repository::get_health_report()` calls `build_groups()` with no search/status/pagination (always the whole site) and tallies each layer/device field into `pending` / `in_progress` / `completed` / `failed` / `other` (unrecognized status strings land in `other` rather than being dropped, so percentages still sum to ~100%). Fields with zero tracked URLs report `0.0%` everywhere rather than being divided by zero. Result is cached via `set_transient('pwr_health_report', …, apply_filters('pwr_health_cache_ttl', 5 * MINUTE_IN_SECONDS))` since it requires an unpaginated scan of every matched row; `get_health_report(true)` forces a recompute (wired to the `?pwr_refresh_health=1` link in the admin page).
+Status handling: WP Rocket writes `to-submit`, `pending`, `in-progress`, `completed`, `failed`. `STATUS_SYNONYMS` maps raw values to `pending` / `in_progress` / `completed` / `failed`; the status filter uses the same map in SQL (`LOWER(TRIM(status)) IN (...)`), and badges always use `normalize_status()` for class + label (raw value kept in the `title`). `pick_status()` resolves duplicates with `STATUS_RANK` (failed > in_progress > pending > completed). MySQL zero dates (`0000-00-00 ...`, WP Rocket's column default) are treated as empty by `is_empty_date()`.
 
-**Admin UI**: `PWR_Admin_Page::render()` (`includes/admin/class-pwr-admin-page.php`) renders two summary panels (`render_health_panel()`, `render_cron_panel()`) followed by the filter form, and delegates the table to `PWR_List_Table` (`includes/admin/class-pwr-list-table.php`), which extends core `WP_List_Table`. Columns render status+date pairs per layer/device via `render_status_with_date()`. Dates are always converted to the site timezone using `wp_date()`/`wp_timezone()`, never raw DB timestamps.
+`get_health_report()` runs one `GROUP BY status, device` per table (no full scan), adds `coverage` (tracked rows ÷ cache rows) per field, and is cached in the `pwr_health_report` transient (`pwr_health_cache_ttl`, forced by `?pwr_refresh_health=1`).
 
-**WP Rocket integration**: `PWR_WPRocket_Adapter` (`includes/integration/class-pwr-wprocket-adapter.php`) detects WP Rocket presence (`defined('WP_ROCKET_VERSION')`) and support for specific features (page cache, RUCSS, priority elements) by checking for WP Rocket functions/DI container services. It never assumes WP Rocket internals are stable — service lookups are wrapped in `try/catch (Throwable)`.
+**Cache inspection**: `PWR_Cache_Inspector` (`includes/integration/class-pwr-cache-inspector.php`) mirrors `WP_Rocket\Buffer\Cache::get_request_cache_path()` for anonymous visitors: `WP_ROCKET_CACHE_PATH . host . path`, host lowercased without port (dots → `_` when `rocket_url_no_dots`), path without trailing slash with lowercased `%XX`, file `index[-mobile][-https][-webp][-cookie].html`. `file_summary()` is the cheap per-row check for the `[file]` column. `inspect()` lists every `index*.html` variant, reads the desktop file and parses `<meta name="generator" ... data-wpr-features="...">` (each step of WP Rocket's `rocket_buffer` pipeline leaves a `wpr_<feature>` marker that WP Rocket's Support module turns into this tag) plus the `cached@<ts>` footprint, then `compare_features()` maps markers to settings: `applied`, `applied_unexpected`, `missing`, `waiting` (data-dependent), `stale` (data completed after the file was written), `data_failed`, `excluded` (post meta `_rocket_exclude_{option}` from WP Rocket's metabox), `unknown` (no meta tag), `off`. Unknown markers from newer WP Rocket versions are listed as applied.
 
-**Cron status**: `PWR_Cron_Status::get_status()` (`includes/integration/class-pwr-cron-status.php`) reports on the cron machinery that keeps the WP Rocket tables above up to date, combining two sources because they offer different guarantees:
-- **Native WP-Cron**: scans `_get_cron_array()` for hook names containing `rocket` (configurable via `pwr_cron_hook_pattern`, dynamic detection rather than a hardcoded hook list, same philosophy as the table/column detection above). WordPress core keeps no execution history for wp-cron, only the next-scheduled timestamp, so this only reports "next run" and flags `overdue` when that time has passed. `DISABLE_WP_CRON` is surfaced as an informational note, not an error (common on sites using a real system cron).
-- **Action Scheduler** (the queue library WP Rocket uses to process the RUCSS backlog): feature-detected via `function_exists('as_get_scheduled_actions')`/`class_exists('ActionScheduler_Store')`, then queried directly against `{$wpdb->prefix}actionscheduler_actions` (same `SHOW TABLES LIKE`-guarded, try/catch-wrapped pattern as the repository, rather than relying on AS API methods that vary across bundled library versions) for the most recent completed/failed actions matching the same hook pattern. This is the only source with real "last run" + success/failure history.
-Cached via `set_transient('pwr_cron_status', …, apply_filters('pwr_cron_cache_ttl', 5 * MINUTE_IN_SECONDS))`; forced refresh via `?pwr_refresh_cron=1`.
+**Environment checklist**: `PWR_Environment::get_checks()` (`includes/integration/class-pwr-environment.php`) returns `ok|info|warning|error` checks: license (`rocket_valid_key()`), `WP_CACHE`, `advanced-cache.php` (exists, contains `WP_ROCKET_ADVANCED_CACHE`, `WP_ROCKET_ADVANCED_CACHE_PROBLEM` not defined), `wp-rocket-config/<host>*.php`, writable cache folders, Apache `.htaccess` `# BEGIN WP Rocket` block / Nginx note, preload on, and overdue Action Scheduler actions. Note the `advanced-cache.php` "did not run" warning appears under WP-CLI, which never loads drop-ins.
 
-**REST API**: `PWR_REST` (`includes/rest/class-pwr-rest.php`) registers `processing-wp-rocket/v1/purge` and `/bulk-purge`, gated by `pwr_min_cap()` capability and a `pwr_rest`-action nonce. These call into `PWR_WPRocket_Adapter`.
+**WP Rocket integration**: `PWR_WPRocket_Adapter` is read-only: `is_active()`, `version()`, `get_option()` (uses `get_rocket_option()` so WP Rocket's `pre_get_rocket_option_*` filters apply, e.g. Delay JS disabling Combine JS), `cache_lifespan()` and `cache_root()`.
+
+**Admin UI**: `PWR_Admin_Page::render()` renders, in order: environment checklist (`<details>`, opens when anything is not OK), Inspect URL panel (when `?pwr_inspect=<url>`), Site Health, Cron Status, filters, a column legend and `PWR_List_Table`. Dates are converted with `PWR_List_Table::format_datetime()` (accepts GMT DB strings or Unix timestamps) → `wp_date()` in the site timezone. There is no admin JavaScript.
+
+**Cron status**: `PWR_Cron_Status::get_status()` combines WP-Cron (next run per hook matching `pwr_cron_hook_pattern`, flagged overdue only after `max(10 min, recurrence)`) and Action Scheduler read directly from `{prefix}actionscheduler_actions` (+ groups): history aggregated per hook/status over `pwr_cron_window_days` (default 7), and a backlog per group with pending, running and overdue counts (`pwr_cron_past_due_grace`, default 10 min). All LIKE params are passed inside a single `prepare()` call per query. Memoized per request and cached in the `pwr_cron_status` transient (`?pwr_refresh_cron=1`). WP Rocket's groups seen in practice: `rocket-preload`, `rocket-rucss`, `rocket-cdn`, `rocket`.
 
 ## Known quirks
 
-- **Version bumps need two places**: the plugin header `Version:` in `processing-wp-rocket.php` and the `PWR_VERSION` constant defined just below it must be kept in sync manually — nothing derives one from the other. `PWR_VERSION` is what's actually used for asset cache-busting (`wp_enqueue_style`/`wp_enqueue_script`).
-- **Purge code is not exposed in the current UI**: the README states purge/clear buttons were removed in 2.0.0, and `PWR_List_Table::render_row_actions()` only renders a PageSpeed Insights link now — but `PWR_REST` (`/purge`, `/bulk-purge`) and `PWR_WPRocket_Adapter::purge_page_cache()` / `clear_used_css_for_url()` / `clear_priority_elements_data()` are still fully implemented and reachable via direct REST calls (capability + nonce gated), and `assets/js/admin.js` still wires up a `.pwr-act` click handler that POSTs to `/purge` for a class of button that no longer exists in the table markup. Treat this as functioning-but-unused legacy code, not dead code to assume-and-ignore if touching purge behavior.
+- **Version bumps need two places**: the plugin header `Version:` in `processing-wp-rocket.php` and the `PWR_VERSION` constant defined just below it must be kept in sync manually. `PWR_VERSION` is used for asset cache-busting.
+- **Cache path assumptions**: the inspector reproduces WP Rocket's path logic for anonymous visitors only. Logged-in caches (`<host>-<user>-<key>`), query-string caches and multi-server setups (each node has its own files) are not covered.
+- **"Enabled but missing" is not always a bug**: some markers are only written when the page had matching content (e.g. images without dimensions), and none are written when WP Rocket white label or `rocket_disable_meta_generator` is active.
 
 ## Extensibility filters
 
@@ -55,14 +54,16 @@ These are the public filters other code (or debugging) can hook:
 - `pwr_status_labels` — customize status badge labels.
 - `pwr_datetime_format` — change the date format (default `Y-m-d H:i:s`).
 - `pwr_tables` — override/extend which WP Rocket tables are scanned.
-- `pwr_min_capability` — capability required to access the screen/REST routes (default `manage_options`).
+- `pwr_min_capability` — capability required to access the screen (default `manage_options`).
 - `pwr_table_per_page` — rows per page in the admin list table (default `20`).
 - `pwr_repository_items` — short-circuit `PWR_Repository::query_items()` entirely with custom data (list table only, not the Site Health panel).
 - `pwr_health_cache_ttl` — cache lifetime in seconds for the Site Health panel (default `5 * MINUTE_IN_SECONDS`).
 - `pwr_health_field_labels` — customize the per-layer labels shown in the Site Health panel.
 - `pwr_cron_cache_ttl` — cache lifetime in seconds for the Cron Status panel (default `5 * MINUTE_IN_SECONDS`).
 - `pwr_cron_hook_pattern` — substring used to auto-detect WP Rocket's cron hooks and Action Scheduler actions (default `rocket`).
-- `pwr_cron_actions_limit` — how many recent Action Scheduler actions to consider for the Cron Status success/failure rollup (default `50`).
+- `pwr_cron_window_days` — days of Action Scheduler history aggregated per hook (default `7`).
+- `pwr_cron_past_due_grace` — seconds before a pending Action Scheduler action counts as overdue (default `10 * MINUTE_IN_SECONDS`).
+- `pwr_inspect_max_bytes` — maximum bytes read from a cache file in the inspector (default `8 * MB_IN_BYTES`).
 
 ## i18n
 

@@ -1,27 +1,36 @@
-.pwr-row-actions .button { margin-right: 6px; }
-.pwr-row-actions .is-busy { opacity: .6; cursor: wait; }
-.pwr-badge{display:inline-block;padding:2px 6px;border-radius:10px;font-size:11px;line-height:1;border:1px solid #ccd0d4;background:#f6f7f7}
-.pwr-status-in_progress{background:#fff3cd;border-color:#ffeeba}
-.pwr-status-done{background:#d4edda;border-color:#c3e6cb}
-.pwr-status-failed{background:#f8d7da;border-color:#f5c6cb}
+.pwr-row-actions .button { margin: 0 6px 4px 0; }
+.pwr-badge{display:inline-block;padding:2px 6px;border-radius:10px;font-size:11px;line-height:1.2;border:1px solid #ccd0d4;background:#f6f7f7;white-space:nowrap}
 
 /* Status colors */
 .pwr-status-completed{background:#d4edda;border-color:#c3e6cb}
 .pwr-status-pending{background:#fff3cd;border-color:#ffeeba}
 .pwr-status-in_progress{background:#e0e7ff;border-color:#c7d2fe}
 .pwr-status-failed{background:#f8d7da;border-color:#f5c6cb}
+.pwr-status-info{background:#f0f0f1;border-color:#dcdcde}
 
 .pwr-statusblock{min-width:120px}
 .pwr-date{opacity:.8}
+.pwr-error{display:inline-block;max-width:220px;color:#b32d2e;line-height:1.3}
+.pwr-legend{margin:12px 0 4px;max-width:1100px}
 
 .pwr-panel{margin:16px 0;padding:12px 16px;background:#fff;border:1px solid #ccd0d4;box-shadow:0 1px 1px rgba(0,0,0,.04)}
-.pwr-panel h2{display:flex;align-items:center;gap:10px;font-size:14px}
-.pwr-panel h3{margin:14px 0 6px;font-size:13px}
+.pwr-panel h2{display:flex;align-items:center;gap:10px;font-size:14px;margin:8px 0}
+.pwr-panel h3{margin:16px 0 6px;font-size:13px}
+.pwr-panel table{margin-top:6px}
+.pwr-panel table td,.pwr-panel table th{padding:6px 10px;vertical-align:top}
+details.pwr-panel > summary{cursor:pointer;list-style:none}
+details.pwr-panel > summary::-webkit-details-marker{display:none}
+details.pwr-panel > summary h2::before{content:"\25B8";font-size:12px}
+details.pwr-panel[open] > summary h2::before{content:"\25BE"}
+.pwr-env-status{width:90px}
+.pwr-env-table th{width:200px}
 .pwr-refresh-link{font-size:12px;font-weight:400}
-.pwr-health-table{margin-top:8px}
-.pwr-health-table td,.pwr-health-table th{padding:6px 10px}
 .pwr-health-count{opacity:.6;font-size:11px}
 .pwr-cron-list{margin:0;padding-left:0;list-style:none}
 .pwr-cron-list li{padding:4px 0;border-bottom:1px solid #f0f0f1}
 .pwr-cron-tally{opacity:.7;font-size:11px}
 .pwr-note{color:#646970}
+.pwr-inspect-panel{border-left:4px solid #2271b1}
+.pwr-feature-off td{opacity:.55}
+.pwr-file-line{display:block;margin-bottom:6px}
+.column-file{width:120px}
