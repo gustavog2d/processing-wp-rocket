@@ -71,7 +71,7 @@ class PWR_Repository {
 			$raw   = (string) $raw;
 			$table = $wpdb->prefix . $raw;
 			if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) { continue; }
-			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
 			if ( $exists !== $table ) { continue; }
 			$columns = $wpdb->get_results( "SHOW COLUMNS FROM `{$table}`" );
 			if ( empty( $columns ) ) { continue; }
@@ -110,7 +110,8 @@ class PWR_Repository {
 		$order    = 'asc' === strtolower( (string) $args['order'] ) ? 'ASC' : 'DESC';
 		$order_by = 'url' === $args['orderby'] ? 'url' : 'MAX(updated)';
 		$per      = max( 1, (int) $args['per_page'] );
-		$offset   = max( 0, ( (int) $args['paged'] - 1 ) * $per );
+		$paged    = min( max( 1, (int) $args['paged'] ), 1000000 ); // Clamp: a huge ?paged= would overflow into a float.
+		$offset   = ( $paged - 1 ) * $per;
 
 		// The union is already escaped/prepared; LIMIT/OFFSET are cast to int, so no second prepare().
 		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM ( SELECT url FROM ( {$union} ) u GROUP BY url ) c" );

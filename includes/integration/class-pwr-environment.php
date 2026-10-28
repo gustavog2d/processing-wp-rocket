@@ -103,7 +103,7 @@ class PWR_Environment {
 		$host  = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
 		$found = glob( $dir . $host . '*.php' );
 		if ( empty( $found ) ) {
-			return self::check( 'config_file', $label, self::ERROR, sprintf( /* translators: %s: expected file path */ __( '%s not found. advanced-cache.php needs it to decide what can be cached; saving WP Rocket settings regenerates it.', 'processing-wp-rocket' ), $dir . $host . '.php' ) );
+			return self::check( 'config_file', $label, self::ERROR, sprintf( /* translators: %s: expected file path */ __( '%s not found. advanced-cache.php needs it to decide what can be cached; saving WP Rocket settings regenerates it.', 'processing-wp-rocket' ), str_replace( WP_CONTENT_DIR, 'wp-content', $dir . $host . '.php' ) ) );
 		}
 		return self::check( 'config_file', $label, self::OK, sprintf( /* translators: %s: file name(s) */ __( 'Found: %s', 'processing-wp-rocket' ), implode( ', ', array_map( 'basename', $found ) ) ) );
 	}

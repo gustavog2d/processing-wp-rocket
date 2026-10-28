@@ -77,6 +77,9 @@ The plugin only runs in the WordPress admin. It does not affect your frontend pe
 * Performance: pagination, sorting and status filtering now run in SQL; Site Health uses GROUP BY queries.
 * Compatibility: list and health no longer break when WP Rocket tables have different collations ("Illegal mix of collations").
 * Compatibility: on hosts where WP Rocket hands page caching to the host (Kinsta, WP Engine, Pressable, Flywheel, WordPress.com, Pressidium...) the checklist and the [file] column no longer report false errors.
+* Security: the Inspect URL panel only reads cache folders of this site's own hosts, rejects `.`/`..` segments and checks the resolved path (symlinks included) stays inside WP Rocket's cache folder.
+* Security: the cached-page parser does bounded work (no regex over the whole file), so a large or malformed cache file can't stall PHP.
+* Security: refresh links carry a nonce; raw database errors are only shown with WP_DEBUG or ?pwr_debug=1; huge ?paged= values are clamped.
 * Removed: legacy REST purge endpoints and purge adapter. The RUCSS purge path could wipe the Used CSS of the whole site.
 
 = 2.1.0 =
