@@ -67,6 +67,7 @@ The plugin only runs in the WordPress admin. It does not affect your frontend pe
 * New: [file] column showing whether the cache file exists on disk for desktop/mobile, and its age.
 * New: Inspect URL panel comparing the optimizations WP Rocket actually applied to the cached page (`data-wpr-features`) with the enabled settings, plus per-post exclusions and per-queue error details.
 * New: error code/message from WP Rocket tables shown under failed statuses.
+* New: WP Rocket's accumulated error log is grouped by error ("500 · To Submit request failed × 48 · 05:02 → 05:16"), with the last failure highlighted, the raw text one click away, and a warning when the same failure is recorded several times in the same second (a sign of parallel cron runners).
 * New: Action Scheduler backlog (pending, running, overdue) per group; history aggregated per hook over the last 7 days.
 * New: "Coverage vs cache" column in Site Health.
 * Fix: filtering by "In Progress" or "Pending" now matches WP Rocket's raw `in-progress` / `to-submit` values.
