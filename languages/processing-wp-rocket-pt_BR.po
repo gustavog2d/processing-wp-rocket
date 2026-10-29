@@ -212,7 +212,7 @@ msgstr ""
 "fonte da página, pelo navegador."
 
 #: includes/admin/class-pwr-admin-page.php:151
-#: includes/integration/class-pwr-cache-inspector.php:159
+#: includes/integration/class-pwr-cache-inspector.php:181
 msgid ""
 "This URL does not belong to this site, so its cache files were not read."
 msgstr ""
@@ -530,12 +530,12 @@ msgid "host cache"
 msgstr "cache do host"
 
 #: includes/admin/class-pwr-list-table.php:83
-#: includes/integration/class-pwr-cache-inspector.php:289
+#: includes/integration/class-pwr-cache-inspector.php:316
 msgid "desktop"
 msgstr "desktop"
 
 #: includes/admin/class-pwr-list-table.php:85
-#: includes/integration/class-pwr-cache-inspector.php:286
+#: includes/integration/class-pwr-cache-inspector.php:313
 msgid "mobile"
 msgstr "mobile"
 
@@ -632,7 +632,7 @@ msgstr "Elementos prioritários (Desktop)"
 msgid "Priority Elements (Mobile)"
 msgstr "Elementos prioritários (Mobile)"
 
-#: includes/integration/class-pwr-cache-inspector.php:197
+#: includes/integration/class-pwr-cache-inspector.php:224
 msgid ""
 "No data-wpr-features meta tag found in the cached file. WP Rocket omits it "
 "when white label is active, when the rocket_disable_meta_generator filter "
@@ -644,85 +644,92 @@ msgstr ""
 " true, ou quando a página foi gerada com otimizações desligadas "
 "(DONOTROCKETOPTIMIZE)."
 
-#: includes/integration/class-pwr-cache-inspector.php:226
+#: includes/integration/class-pwr-cache-inspector.php:253
 msgid "Remove Unused CSS"
 msgstr "Remove Unused CSS"
 
-#: includes/integration/class-pwr-cache-inspector.php:227
+#: includes/integration/class-pwr-cache-inspector.php:254
 msgid "Load CSS asynchronously (critical CSS)"
 msgstr "Carregar CSS de forma assíncrona (CSS crítico)"
 
-#: includes/integration/class-pwr-cache-inspector.php:228
+#: includes/integration/class-pwr-cache-inspector.php:255
 msgid "Minify CSS"
 msgstr "Minificar CSS"
 
-#: includes/integration/class-pwr-cache-inspector.php:229
+#: includes/integration/class-pwr-cache-inspector.php:256
 msgid "Minify JavaScript"
 msgstr "Minificar JavaScript"
 
-#: includes/integration/class-pwr-cache-inspector.php:230
+#: includes/integration/class-pwr-cache-inspector.php:257
 msgid "Combine JavaScript"
 msgstr "Combinar JavaScript"
 
-#: includes/integration/class-pwr-cache-inspector.php:231
+#: includes/integration/class-pwr-cache-inspector.php:258
 msgid "Load JavaScript deferred"
 msgstr "Carregar JavaScript com defer"
 
-#: includes/integration/class-pwr-cache-inspector.php:232
+#: includes/integration/class-pwr-cache-inspector.php:259
 msgid "Delay JavaScript execution"
 msgstr "Atrasar execução do JavaScript"
 
-#: includes/integration/class-pwr-cache-inspector.php:233
+#: includes/integration/class-pwr-cache-inspector.php:260
 msgid "LazyLoad images"
 msgstr "LazyLoad de imagens"
 
-#: includes/integration/class-pwr-cache-inspector.php:234
+#: includes/integration/class-pwr-cache-inspector.php:261
 msgid "LazyLoad iframes and videos"
 msgstr "LazyLoad de iframes e vídeos"
 
-#: includes/integration/class-pwr-cache-inspector.php:235
+#: includes/integration/class-pwr-cache-inspector.php:262
 msgid "LazyLoad CSS background images"
 msgstr "LazyLoad de imagens de fundo no CSS"
 
-#: includes/integration/class-pwr-cache-inspector.php:236
+#: includes/integration/class-pwr-cache-inspector.php:263
 msgid "Add missing image dimensions"
 msgstr "Adicionar dimensões ausentes nas imagens"
 
-#: includes/integration/class-pwr-cache-inspector.php:237
+#: includes/integration/class-pwr-cache-inspector.php:264
 msgid "CDN rewriting"
 msgstr "Reescrita para CDN"
 
-#: includes/integration/class-pwr-cache-inspector.php:238
+#: includes/integration/class-pwr-cache-inspector.php:265
 msgid "Preload links"
 msgstr "Preload de links"
 
-#: includes/integration/class-pwr-cache-inspector.php:239
+#: includes/integration/class-pwr-cache-inspector.php:266
 msgid "Self-host Google Fonts"
 msgstr "Hospedar Google Fonts localmente"
 
-#: includes/integration/class-pwr-cache-inspector.php:240
+#: includes/integration/class-pwr-cache-inspector.php:267
 msgid "Separate WebP cache"
 msgstr "Cache WebP separado"
 
-#: includes/integration/class-pwr-cache-inspector.php:241
+#: includes/integration/class-pwr-cache-inspector.php:268
 msgid "Optimize critical images (LCP / above the fold)"
 msgstr "Otimizar imagens críticas (LCP / acima da dobra)"
 
-#: includes/integration/class-pwr-cache-inspector.php:242
+#: includes/integration/class-pwr-cache-inspector.php:269
 msgid "Automatic lazy rendering"
 msgstr "Lazy rendering automático"
 
-#: includes/integration/class-pwr-cache-inspector.php:243
+#: includes/integration/class-pwr-cache-inspector.php:270
 msgid "Preconnect to external domains"
 msgstr "Preconnect para domínios externos"
 
-#: includes/integration/class-pwr-cache-inspector.php:244
+#: includes/integration/class-pwr-cache-inspector.php:271
 msgid "Automatic font preload"
 msgstr "Preload automático de fontes"
 
-#: includes/integration/class-pwr-cache-inspector.php:299
-msgid "dynamic cookie"
-msgstr "cookie dinâmico"
+#. translators: %s: cookie value(s) that WP Rocket put in the cache file name
+#: includes/integration/class-pwr-cache-inspector.php:330
+#, php-format
+msgid "dynamic cookie: %s"
+msgstr "cookie dinâmico: %s"
+
+#. translators: %s: cookie value(s) that WP Rocket put in the cache file name
+#: includes/integration/class-pwr-cache-inspector.php:330
+msgid "(not set)"
+msgstr "(não definido)"
 
 #: includes/integration/class-pwr-environment.php:19
 #: includes/integration/class-pwr-environment.php:22

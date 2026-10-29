@@ -124,12 +124,34 @@ class PWR_Cache_Inspector {
 		$out      = [ 'desktop' => null, 'mobile' => false ];
 		if ( '' === $dir ) { return $out; }
 		$desktop        = $dir . '/' . $expected['desktop'];
-		$out['desktop'] = is_readable( $desktop ) ? (int) filemtime( $desktop ) : null;
+		$out['desktop'] = is_readable( $desktop ) ? (int) filemtime( $desktop ) : self::newest_variant( $dir, $expected['desktop'] );
 		if ( '' !== $expected['mobile'] ) {
 			$mobile        = $dir . '/' . $expected['mobile'];
-			$out['mobile'] = is_readable( $mobile ) ? (int) filemtime( $mobile ) : null;
+			$out['mobile'] = is_readable( $mobile ) ? (int) filemtime( $mobile ) : self::newest_variant( $dir, $expected['mobile'] );
 		}
 		return $out;
+	}
+
+	/**
+	 * Newest cache file that only adds suffixes to $base (dynamic cookies, WebP), or null.
+	 *
+	 * Visitors carrying a cookie declared in `rocket_cache_dynamic_cookies` get their own file
+	 * (`index-https-<value>.html`). Since WP Rocket 3.24, Polylang's language cookie is one of them
+	 * when the language is detected from the browser, so a page can be cached only under such names.
+	 */
+	private static function newest_variant( $dir, $base ) {
+		$stem   = substr( $base, 0, -strlen( '.html' ) );
+		$newest = null;
+		foreach ( (array) glob( $dir . '/' . $stem . '-*.html' ) as $file ) {
+			$name = basename( $file );
+			// "index-*.html" would also match the mobile files when the desktop base is plain "index.html".
+			if ( 'index' === $stem && 0 === strpos( $name, 'index-mobile' ) ) { continue; }
+			// The https files are not variants of the plain http file.
+			if ( false === strpos( $stem, '-https' ) && 0 === strpos( substr( $name, strlen( $stem ) ), '-https' ) ) { continue; }
+			$mtime  = (int) filemtime( $file );
+			$newest = null === $newest ? $mtime : max( $newest, $mtime );
+		}
+		return $newest;
 	}
 
 	/**
@@ -174,10 +196,15 @@ class PWR_Cache_Inspector {
 			}
 		}
 
-		// Analyze the default desktop file, falling back to any file found.
+		// Analyze the default desktop file, then any desktop variant (dynamic cookie, WebP), then any file.
 		$target = '';
 		foreach ( $report['files'] as $f ) {
 			if ( $f['name'] === $expected['desktop'] ) { $target = $f['path']; break; }
+		}
+		if ( '' === $target ) {
+			foreach ( $report['files'] as $f ) {
+				if ( 0 !== strpos( $f['name'], 'index-mobile' ) ) { $target = $f['path']; break; }
+			}
 		}
 		if ( '' === $target && ! empty( $report['files'] ) ) { $target = $report['files'][0]['path']; }
 
@@ -294,9 +321,13 @@ class PWR_Cache_Inspector {
 				$rest    = substr( $rest, strlen( $suffix ) );
 			}
 		}
-		// Anything left comes from cookies declared in `rocket_cache_dynamic_cookies`.
+		// Anything left comes from cookies declared in `rocket_cache_dynamic_cookies` ("-<value>" per
+		// cookie; values can contain "-" themselves, so they are shown as written). Since WP Rocket 3.24
+		// a sub-key of an array cookie the visitor did not send still adds a bare "-".
 		if ( '' !== $rest ) {
-			$parts[] = __( 'dynamic cookie', 'processing-wp-rocket' );
+			$value = trim( substr( $rest, 1 ), '-' );
+			/* translators: %s: cookie value(s) that WP Rocket put in the cache file name */
+			$parts[] = sprintf( __( 'dynamic cookie: %s', 'processing-wp-rocket' ), '' === $value ? __( '(not set)', 'processing-wp-rocket' ) : $value );
 		}
 		return implode( ' · ', $parts );
 	}
