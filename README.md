@@ -130,7 +130,7 @@ The plugin shows one row per URL with the per‑layer status (cache, Used CSS, l
 
 ### 2.2.0
 - Security hardening: the Inspect URL panel only reads cache folders of this site and stays inside WP Rocket's cache folder; bounded parsing of cached files; nonce on refresh links.
-- Compatibility: works with WP Rocket tables of mixed collations and on hosts where the hosting handles page caching. Tested up to WordPress 7.1.
+- Compatibility: WP Rocket 3.24 (pages cached only under dynamic-cookie file names, such as Polylang's language cookie, are recognized). Works with WP Rocket tables of mixed collations and on hosts where the hosting handles page caching. Tested up to WordPress 7.1.
 - Added an **Environment Checklist**, a **[file]** column, an **Inspect URL** panel and **error messages** from WP Rocket's tables.
 - Added the **Action Scheduler backlog** (pending / running / overdue per group) and **coverage vs cache** in Site Health.
 - Fixed status filtering and badges for WP Rocket's raw `in-progress` / `to-submit` values, status conflict resolution, and exact-match search with a trailing slash.
