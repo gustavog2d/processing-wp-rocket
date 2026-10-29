@@ -128,9 +128,13 @@ The plugin shows one row per URL with the per‑layer status (cache, Used CSS, l
 
 ## 🚀 Changelog (excerpt)
 
+### 2.3.0
+- **Readable error log**: repeated SaaS failures are grouped ("500 · To Submit request failed × 48 · 05:02 → 05:16"), the last one is highlighted and a warning flags parallel cron runners.
+- **WP Rocket 3.24**: pages cached only under dynamic-cookie file names (such as Polylang's language cookie) are recognized, with the cookie value shown per variant.
+- **Compatibility**: WP Rocket tables with mixed collations, and hosts that handle page caching themselves. Tested up to WordPress 7.1.
+- **Security hardening**: the Inspect URL panel only reads this site's cache folders and stays inside WP Rocket's cache folder; bounded parsing of cached files; nonce on refresh links.
+
 ### 2.2.0
-- Security hardening: the Inspect URL panel only reads cache folders of this site and stays inside WP Rocket's cache folder; bounded parsing of cached files; nonce on refresh links.
-- Compatibility: WP Rocket 3.24 (pages cached only under dynamic-cookie file names, such as Polylang's language cookie, are recognized). Works with WP Rocket tables of mixed collations and on hosts where the hosting handles page caching. Tested up to WordPress 7.1.
 - Added an **Environment Checklist**, a **[file]** column, an **Inspect URL** panel and **error messages** from WP Rocket's tables.
 - Added the **Action Scheduler backlog** (pending / running / overdue per group) and **coverage vs cache** in Site Health.
 - Fixed status filtering and badges for WP Rocket's raw `in-progress` / `to-submit` values, status conflict resolution, and exact-match search with a trailing slash.

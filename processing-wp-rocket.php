@@ -3,7 +3,7 @@
  * Plugin Name:       Processing WP Rocket
  * Plugin URI:        https://github.com/gustavog2d/processing-wp-rocket
  * Description:       Read-only diagnostics for WP Rocket: per-URL processing status, cache files on disk, optimizations actually applied to each page, SaaS errors, environment checklist and queue health.
- * Version:           2.2.0
+ * Version:           2.3.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Gustavo Henrique
@@ -14,7 +14,7 @@
  * Domain Path:       /languages
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
-define( 'PWR_VERSION', '2.2.0' );
+define( 'PWR_VERSION', '2.3.0' );
 define( 'PWR_FILE', __FILE__ );
 define( 'PWR_DIR', plugin_dir_path( __FILE__ ) );
 define( 'PWR_URL', plugin_dir_url( __FILE__ ) );

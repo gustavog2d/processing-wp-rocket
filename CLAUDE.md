@@ -44,6 +44,13 @@ Status handling: WP Rocket writes `to-submit`, `pending`, `in-progress`, `comple
 
 **Cron status**: `PWR_Cron_Status::get_status()` combines WP-Cron (next run per hook matching `pwr_cron_hook_pattern`, flagged overdue only after `max(10 min, recurrence)`) and Action Scheduler read directly from `{prefix}actionscheduler_actions` (+ groups): history aggregated per hook/status over `pwr_cron_window_days` (default 7), and a backlog per group with pending, running and overdue counts (`pwr_cron_past_due_grace`, default 10 min). All LIKE params are passed inside a single `prepare()` call per query. Memoized per request and cached in the `pwr_cron_status` transient (`?pwr_refresh_cron=1`). WP Rocket's groups seen in practice: `rocket-preload`, `rocket-rucss`, `rocket-cdn`, `rocket`.
 
+## Release flow
+
+1. Before starting, fetch and read `master`, and check that the branch you plan to use has no merged or closed PR (`gh api repos/gustavog2d/processing-wp-rocket/pulls?state=all`). Never push new work to a branch whose PR is already merged; start a new branch from `master` instead.
+2. Work on `release/<version>` (or `feature/<name>` merged into a release branch), following semantic versioning: new features → minor, fixes only → patch.
+3. In the same PR: bump the version in both places (plugin header `Version:` and `PWR_VERSION`), `Stable tag:` in `readme.txt`, add the version's section to the `readme.txt` changelog and Upgrade Notice and to the README changelog, regenerate the `.pot` (and `pt_BR` `.po`/`.mo`) when strings changed, and keep this file in sync with architecture changes.
+4. After merging, tag the merge commit with the version (`2.3.0`, no `v`) and create the GitHub release with the changelog section.
+
 ## Known quirks
 
 - **Version bumps need two places**: the plugin header `Version:` in `processing-wp-rocket.php` and the `PWR_VERSION` constant defined just below it must be kept in sync manually. `PWR_VERSION` is used for asset cache-busting.

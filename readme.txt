@@ -5,7 +5,7 @@ Tags: cache, performance, logs, wp-rocket
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,12 +62,21 @@ The plugin only runs in the WordPress admin. It does not affect your frontend pe
 
 == Changelog ==
 
+= 2.3.0 =
+* New: WP Rocket's accumulated error log is grouped by error ("500 · To Submit request failed × 48 · 05:02 → 05:16"), with the last failure highlighted, the raw text one click away, and a warning when the same failure is recorded several times in the same second (a sign of parallel cron runners).
+* Compatibility: WP Rocket 3.24. The [file] column and the Inspect panel recognize pages cached only under dynamic-cookie names (e.g. Polylang's language cookie, which WP Rocket 3.24 adds to the file name when the language is detected from the browser) and show the cookie value of each variant.
+* Compatibility: list and health no longer break when WP Rocket tables have different collations ("Illegal mix of collations").
+* Compatibility: on hosts where WP Rocket hands page caching to the host (Kinsta, WP Engine, Pressable, Flywheel, WordPress.com, Pressidium...) the checklist and the [file] column no longer report false errors.
+* Compatibility: tested up to WordPress 7.1.
+* Security: the Inspect URL panel only reads cache folders of this site's own hosts, rejects `.`/`..` segments and checks the resolved path (symlinks included) stays inside WP Rocket's cache folder.
+* Security: the cached-page parser does bounded work (no regex over the whole file), so a large or malformed cache file can't stall PHP.
+* Security: refresh links carry a nonce; raw database errors are only shown with WP_DEBUG or ?pwr_debug=1; huge ?paged= values are clamped.
+
 = 2.2.0 =
 * New: Environment Checklist panel (WP_CACHE, advanced-cache.php drop-in, cache config file, writable folders, server rules, license, preload, overdue queue actions).
 * New: [file] column showing whether the cache file exists on disk for desktop/mobile, and its age.
 * New: Inspect URL panel comparing the optimizations WP Rocket actually applied to the cached page (`data-wpr-features`) with the enabled settings, plus per-post exclusions and per-queue error details.
 * New: error code/message from WP Rocket tables shown under failed statuses.
-* New: WP Rocket's accumulated error log is grouped by error ("500 · To Submit request failed × 48 · 05:02 → 05:16"), with the last failure highlighted, the raw text one click away, and a warning when the same failure is recorded several times in the same second (a sign of parallel cron runners).
 * New: Action Scheduler backlog (pending, running, overdue) per group; history aggregated per hook over the last 7 days.
 * New: "Coverage vs cache" column in Site Health.
 * Fix: filtering by "In Progress" or "Pending" now matches WP Rocket's raw `in-progress` / `to-submit` values.
@@ -76,12 +85,6 @@ The plugin only runs in the WordPress admin. It does not affect your frontend pe
 * Fix: exact-match search accepts URLs with or without the trailing slash.
 * Fix: WP-Cron hooks are only flagged overdue after a grace period.
 * Performance: pagination, sorting and status filtering now run in SQL; Site Health uses GROUP BY queries.
-* Compatibility: list and health no longer break when WP Rocket tables have different collations ("Illegal mix of collations").
-* Compatibility: on hosts where WP Rocket hands page caching to the host (Kinsta, WP Engine, Pressable, Flywheel, WordPress.com, Pressidium...) the checklist and the [file] column no longer report false errors.
-* Compatibility: WP Rocket 3.24. The [file] column and the Inspect panel recognize pages cached only under dynamic-cookie names (e.g. Polylang's language cookie, which WP Rocket 3.24 adds to the file name when the language is detected from the browser) and show the cookie value of each variant.
-* Security: the Inspect URL panel only reads cache folders of this site's own hosts, rejects `.`/`..` segments and checks the resolved path (symlinks included) stays inside WP Rocket's cache folder.
-* Security: the cached-page parser does bounded work (no regex over the whole file), so a large or malformed cache file can't stall PHP.
-* Security: refresh links carry a nonce; raw database errors are only shown with WP_DEBUG or ?pwr_debug=1; huge ?paged= values are clamped.
 * Removed: legacy REST purge endpoints and purge adapter. The RUCSS purge path could wipe the Used CSS of the whole site.
 
 = 2.1.0 =
@@ -101,6 +104,9 @@ The plugin only runs in the WordPress admin. It does not affect your frontend pe
 * Displayed raw WP Rocket processing logs in admin.
 
 == Upgrade Notice ==
+
+= 2.3.0 =
+Security hardening of the Inspect URL panel (recommended), readable WP Rocket error logs, and compatibility with WP Rocket 3.24, mixed-collation databases and managed hosts.
 
 = 2.2.0 =
 Adds environment checklist, cache file verification and per-URL inspection. Removes the unused REST purge endpoints.
