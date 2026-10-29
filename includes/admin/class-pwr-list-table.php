@@ -76,6 +76,9 @@ class PWR_List_Table extends WP_List_Table {
 	}
 
 	private function render_file_cell( $url ) {
+		if ( PWR_WPRocket_Adapter::host_handles_page_cache() ) {
+			return '<span class="pwr-badge pwr-status-info" title="' . esc_attr__( 'Page cache handled by the hosting; WP Rocket writes no cache files here.', 'processing-wp-rocket' ) . '">' . esc_html__( 'host cache', 'processing-wp-rocket' ) . '</span>';
+		}
 		$summary = PWR_Cache_Inspector::file_summary( $url );
 		$out     = $this->file_line( __( 'desktop', 'processing-wp-rocket' ), $summary['desktop'] );
 		if ( false !== $summary['mobile'] ) {
@@ -110,9 +113,14 @@ class PWR_List_Table extends WP_List_Table {
 		$formatted = self::format_datetime( $date );
 		$html      = '<div class="pwr-statusblock">' . $badge . '<br /><small class="pwr-date">' . esc_html( '' !== $formatted ? $formatted : '—' ) . '</small>';
 		if ( $error && ( '' !== $error['message'] || '' !== $error['code'] ) ) {
-			$text  = trim( ( '' !== $error['code'] ? '[' . $error['code'] . '] ' : '' ) . $error['message'] );
-			$short = function_exists( 'mb_strimwidth' ) ? mb_strimwidth( $text, 0, 80, '…' ) : substr( $text, 0, 80 );
-			$html .= '<br /><small class="pwr-error" title="' . esc_attr( $text ) . '">' . esc_html( $short ) . '</small>';
+			$log   = PWR_Error_Log::parse( $error['message'], $error['code'] );
+			$short = PWR_Error_Log::short_summary( $log );
+			$title = PWR_Error_Log::plain_summary( $log );
+			$title = function_exists( 'mb_strimwidth' ) ? mb_strimwidth( $title, 0, 1500, '…' ) : substr( $title, 0, 1500 );
+			$html .= '<br /><small class="pwr-error" title="' . esc_attr( $title ) . '">' . esc_html( $short ) . '</small>';
+			if ( $log['burst'] ) {
+				$html .= '<br /><small class="pwr-error pwr-error-burst" title="' . esc_attr( PWR_Error_Log::burst_text( $log['burst'] ) ) . '"><span class="dashicons dashicons-warning" aria-hidden="true"></span> ' . esc_html__( 'parallel cron?', 'processing-wp-rocket' ) . '</small>';
+			}
 		}
 		return $html . '</div>';
 	}

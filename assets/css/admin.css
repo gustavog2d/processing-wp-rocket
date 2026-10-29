@@ -34,3 +34,10 @@ details.pwr-panel[open] > summary h2::before{content:"\25BE"}
 .pwr-feature-off td{opacity:.55}
 .pwr-file-line{display:block;margin-bottom:6px}
 .column-file{width:120px}
+.pwr-error-burst .dashicons,.pwr-errlog-burst .dashicons{font-size:16px;width:16px;height:16px;vertical-align:text-bottom}
+.pwr-errlog p{margin:0 0 6px}
+.pwr-errlog-groups{margin:0 0 6px 18px;list-style:disc}
+.pwr-errlog-groups li{margin:0 0 2px}
+.pwr-errlog-burst{padding:6px 8px;background:#fcf9e8;border-left:3px solid #dba617}
+.pwr-errlog-raw summary{cursor:pointer;opacity:.8}
+.pwr-errlog-raw code{display:block;max-height:160px;overflow:auto;white-space:pre-wrap;word-break:break-word;margin-top:4px;font-size:11px}

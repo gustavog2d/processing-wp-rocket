@@ -71,7 +71,7 @@ class PWR_Repository {
 			$raw   = (string) $raw;
 			$table = $wpdb->prefix . $raw;
 			if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) { continue; }
-			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
 			if ( $exists !== $table ) { continue; }
 			$columns = $wpdb->get_results( "SHOW COLUMNS FROM `{$table}`" );
 			if ( empty( $columns ) ) { continue; }
@@ -110,7 +110,8 @@ class PWR_Repository {
 		$order    = 'asc' === strtolower( (string) $args['order'] ) ? 'ASC' : 'DESC';
 		$order_by = 'url' === $args['orderby'] ? 'url' : 'MAX(updated)';
 		$per      = max( 1, (int) $args['per_page'] );
-		$offset   = max( 0, ( (int) $args['paged'] - 1 ) * $per );
+		$paged    = min( max( 1, (int) $args['paged'] ), 1000000 ); // Clamp: a huge ?paged= would overflow into a float.
+		$offset   = ( $paged - 1 ) * $per;
 
 		// The union is already escaped/prepared; LIMIT/OFFSET are cast to int, so no second prepare().
 		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM ( SELECT url FROM ( {$union} ) u GROUP BY url ) c" );
@@ -255,7 +256,9 @@ class PWR_Repository {
 				$where       .= $wpdb->prepare( " AND LOWER(TRIM(`{$s['cols']['status']}`)) IN ({$placeholders})", $raws );
 			}
 			$updated = $s['cols']['updated'] ? "`{$s['cols']['updated']}`" : 'NULL';
-			$parts[] = "SELECT {$url_col} AS url, {$updated} AS updated FROM `{$s['table']}` WHERE {$where}";
+			// CAST AS BINARY: tables created at different times (or after a DB migration) can have
+			// different collations, and UNION refuses to mix them ("Illegal mix of collations").
+			$parts[] = "SELECT CAST({$url_col} AS BINARY) AS url, {$updated} AS updated FROM `{$s['table']}` WHERE {$where}";
 		}
 		return implode( ' UNION ALL ', $parts );
 	}

@@ -10,6 +10,7 @@ class PWR_Plugin {
         require_once PWR_DIR . 'includes/admin/class-pwr-admin-page.php';
         require_once PWR_DIR . 'includes/admin/class-pwr-list-table.php';
         require_once PWR_DIR . 'includes/data/class-pwr-repository.php';
+        require_once PWR_DIR . 'includes/data/class-pwr-error-log.php';
         require_once PWR_DIR . 'includes/integration/class-pwr-wprocket-adapter.php';
         require_once PWR_DIR . 'includes/integration/class-pwr-cron-status.php';
         require_once PWR_DIR . 'includes/integration/class-pwr-cache-inspector.php';

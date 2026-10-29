@@ -33,6 +33,29 @@ class PWR_WPRocket_Adapter {
 		return max( 0, $interval * $seconds );
 	}
 
+	/**
+	 * True when WP Rocket hands page caching to the host (Kinsta, WP Engine, Pressable, Flywheel,
+	 * WordPress.com, Pressidium, ...). WP Rocket's host integrations turn these filters off; it then
+	 * only optimizes the HTML and writes no cache files, no WP_CACHE and no advanced-cache.php.
+	 */
+	public static function host_handles_page_cache() {
+		if ( ! self::is_active() ) { return false; }
+		return ! apply_filters( 'do_rocket_generate_caching_files', true ) || ! apply_filters( 'rocket_generate_advanced_cache_file', true );
+	}
+
+	/** WP Rocket's own name for the detected managed host (e.g. "wpengine", "kinsta"), or ''. */
+	public static function host_name() {
+		$class = '\WP_Rocket\ThirdParty\Hostings\HostResolver';
+		if ( class_exists( $class ) && method_exists( $class, 'get_host_service' ) ) {
+			try {
+				return (string) call_user_func( [ $class, 'get_host_service' ] );
+			} catch ( \Throwable $e ) {
+				return '';
+			}
+		}
+		return '';
+	}
+
 	/** Root folder of WP Rocket's page cache files. */
 	public static function cache_root() {
 		if ( defined( 'WP_ROCKET_CACHE_PATH' ) ) { return trailingslashit( WP_ROCKET_CACHE_PATH ); }

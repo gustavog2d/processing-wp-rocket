@@ -14,18 +14,88 @@ class PWR_Cache_Inspector {
 	/**
 	 * Directory WP Rocket uses for a URL, mirroring WP_Rocket\Buffer\Cache::get_request_cache_path()
 	 * for anonymous visitors.
+	 *
+	 * Returns '' for anything that is not a page of this site: the host must be one of this site's
+	 * hosts, `.`/`..` segments are refused, and the final path must stay inside WP Rocket's cache root.
+	 * The URL comes from the request (`?pwr_inspect=`), so this is the only gate before filesystem reads.
 	 */
 	public static function dir_for_url( $url ) {
 		$parts = wp_parse_url( (string) $url );
-		if ( empty( $parts['host'] ) ) { return ''; }
-		$host = trim( strtolower( $parts['host'] ), '.' );
+		if ( ! is_array( $parts ) || empty( $parts['host'] ) ) { return ''; }
+		$host = trim( strtolower( (string) $parts['host'] ), '.' );
+		if ( '' === $host || ! in_array( $host, self::allowed_hosts(), true ) ) { return ''; }
 		if ( apply_filters( 'rocket_url_no_dots', false ) ) {
 			$host = str_replace( '.', '_', $host );
 		}
 		$path = isset( $parts['path'] ) ? (string) $parts['path'] : '';
+		foreach ( explode( '/', rawurldecode( $path ) ) as $segment ) {
+			if ( '.' === $segment || '..' === $segment || false !== strpos( $segment, '\\' ) || false !== strpos( $segment, "\0" ) ) {
+				return '';
+			}
+		}
 		$path = preg_replace_callback( '/%[0-9A-F]{2}/', static function ( $m ) { return strtolower( $m[0] ); }, $path );
 		$path = rtrim( $path, '/' );
-		return PWR_WPRocket_Adapter::cache_root() . rawurlencode( $host ) . $path;
+		$dir  = PWR_WPRocket_Adapter::cache_root() . rawurlencode( $host ) . $path;
+		return self::is_within_cache_root( $dir ) ? $dir : '';
+	}
+
+	/**
+	 * Hosts this site answers on (home and site URL). Other sites of a multisite network are
+	 * excluded on purpose, so a subsite admin cannot inspect another subsite's cache.
+	 *
+	 * @return string[]
+	 */
+	public static function allowed_hosts() {
+		$hosts = [];
+		foreach ( [ home_url(), site_url() ] as $u ) {
+			$h = wp_parse_url( $u, PHP_URL_HOST );
+			if ( $h ) { $hosts[] = trim( strtolower( (string) $h ), '.' ); }
+		}
+		return array_values( array_unique( (array) apply_filters( 'pwr_inspect_allowed_hosts', $hosts ) ) );
+	}
+
+	/**
+	 * True when $path (existing or not) resolves inside WP Rocket's cache root, symlinks included.
+	 */
+	private static function is_within_cache_root( $path ) {
+		$root = realpath( PWR_WPRocket_Adapter::cache_root() );
+		if ( false === $root ) { return false; }
+		$root = rtrim( $root, '/\\' ) . DIRECTORY_SEPARATOR;
+		// Resolve the deepest existing ancestor; the rest of the path has no `..` by construction.
+		$probe = $path;
+		while ( false === realpath( $probe ) ) {
+			$parent = dirname( $probe );
+			if ( $parent === $probe ) { return false; }
+			$probe = $parent;
+		}
+		$real = rtrim( (string) realpath( $probe ), '/\\' ) . DIRECTORY_SEPARATOR;
+		return 0 === strpos( $real, $root );
+	}
+
+	/**
+	 * Values of the WP Rocket generator meta tag, found with strpos() and parsed on that tag only
+	 * (a regex over the whole file could backtrack for seconds on large or malformed HTML).
+	 *
+	 * @return string[]|null Feature markers, or null when the tag is absent.
+	 */
+	private static function parse_features( $html ) {
+		// Bounded work: at most 20 candidates, each looked at within a 512 + 2048 byte window,
+		// so a large or malformed file can never cost more than a few kilobytes of scanning.
+		$offset   = 0;
+		$attempts = 0;
+		while ( $attempts++ < 20 && false !== ( $pos = stripos( $html, 'data-wpr-features', $offset ) ) ) {
+			$offset = $pos + 17;
+			$base   = max( 0, $pos - 512 );
+			$start  = strrpos( substr( $html, $base, $pos - $base ), '<' );
+			$end    = strpos( substr( $html, $pos, 2048 ), '>' );
+			if ( false === $start || false === $end ) { continue; }
+			$tag = substr( $html, $base + $start, ( $pos + $end ) - ( $base + $start ) + 1 );
+			if ( 0 !== stripos( $tag, '<meta' ) || ! preg_match( '/\bname\s*=\s*["\']generator["\']/i', $tag ) ) { continue; }
+			if ( preg_match( '/data-wpr-features\s*=\s*["\']([^"\']*)["\']/i', $tag, $m ) ) {
+				return array_values( array_filter( preg_split( '/\s+/', trim( $m[1] ) ) ) );
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -54,12 +124,34 @@ class PWR_Cache_Inspector {
 		$out      = [ 'desktop' => null, 'mobile' => false ];
 		if ( '' === $dir ) { return $out; }
 		$desktop        = $dir . '/' . $expected['desktop'];
-		$out['desktop'] = is_readable( $desktop ) ? (int) filemtime( $desktop ) : null;
+		$out['desktop'] = is_readable( $desktop ) ? (int) filemtime( $desktop ) : self::newest_variant( $dir, $expected['desktop'] );
 		if ( '' !== $expected['mobile'] ) {
 			$mobile        = $dir . '/' . $expected['mobile'];
-			$out['mobile'] = is_readable( $mobile ) ? (int) filemtime( $mobile ) : null;
+			$out['mobile'] = is_readable( $mobile ) ? (int) filemtime( $mobile ) : self::newest_variant( $dir, $expected['mobile'] );
 		}
 		return $out;
+	}
+
+	/**
+	 * Newest cache file that only adds suffixes to $base (dynamic cookies, WebP), or null.
+	 *
+	 * Visitors carrying a cookie declared in `rocket_cache_dynamic_cookies` get their own file
+	 * (`index-https-<value>.html`). Since WP Rocket 3.24, Polylang's language cookie is one of them
+	 * when the language is detected from the browser, so a page can be cached only under such names.
+	 */
+	private static function newest_variant( $dir, $base ) {
+		$stem   = substr( $base, 0, -strlen( '.html' ) );
+		$newest = null;
+		foreach ( (array) glob( $dir . '/' . $stem . '-*.html' ) as $file ) {
+			$name = basename( $file );
+			// "index-*.html" would also match the mobile files when the desktop base is plain "index.html".
+			if ( 'index' === $stem && 0 === strpos( $name, 'index-mobile' ) ) { continue; }
+			// The https files are not variants of the plain http file.
+			if ( false === strpos( $stem, '-https' ) && 0 === strpos( substr( $name, strlen( $stem ) ), '-https' ) ) { continue; }
+			$mtime  = (int) filemtime( $file );
+			$newest = null === $newest ? $mtime : max( $newest, $mtime );
+		}
+		return $newest;
 	}
 
 	/**
@@ -85,7 +177,9 @@ class PWR_Cache_Inspector {
 			'excluded'   => [],
 		];
 
-		if ( '' !== $dir && is_dir( $dir ) ) {
+		if ( '' === $dir ) {
+			$report['notes'][] = __( 'This URL does not belong to this site, so its cache files were not read.', 'processing-wp-rocket' );
+		} elseif ( is_dir( $dir ) ) {
 			$files = glob( $dir . '/index*.html' );
 			foreach ( (array) $files as $file ) {
 				$name  = basename( $file );
@@ -102,10 +196,15 @@ class PWR_Cache_Inspector {
 			}
 		}
 
-		// Analyze the default desktop file, falling back to any file found.
+		// Analyze the default desktop file, then any desktop variant (dynamic cookie, WebP), then any file.
 		$target = '';
 		foreach ( $report['files'] as $f ) {
 			if ( $f['name'] === $expected['desktop'] ) { $target = $f['path']; break; }
+		}
+		if ( '' === $target ) {
+			foreach ( $report['files'] as $f ) {
+				if ( 0 !== strpos( $f['name'], 'index-mobile' ) ) { $target = $f['path']; break; }
+			}
 		}
 		if ( '' === $target && ! empty( $report['files'] ) ) { $target = $report['files'][0]['path']; }
 
@@ -113,9 +212,10 @@ class PWR_Cache_Inspector {
 			$report['analyzed'] = basename( $target );
 			$max                = (int) apply_filters( 'pwr_inspect_max_bytes', 8 * MB_IN_BYTES );
 			$html               = (string) file_get_contents( $target, false, null, 0, $max ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-			if ( preg_match( '/<meta[^>]+name=["\']generator["\'][^>]*data-wpr-features=["\']([^"\']*)["\']/i', $html, $m ) ) {
+			$features = self::parse_features( $html );
+			if ( null !== $features ) {
 				$report['meta_found'] = true;
-				$report['found']      = array_values( array_filter( preg_split( '/\s+/', trim( $m[1] ) ) ) );
+				$report['found']      = $features;
 			}
 			if ( preg_match( '/cached@(\d{9,11})/', $html, $m ) ) {
 				$report['cached_at'] = (int) $m[1];
@@ -221,9 +321,13 @@ class PWR_Cache_Inspector {
 				$rest    = substr( $rest, strlen( $suffix ) );
 			}
 		}
-		// Anything left comes from cookies declared in `rocket_cache_dynamic_cookies`.
+		// Anything left comes from cookies declared in `rocket_cache_dynamic_cookies` ("-<value>" per
+		// cookie; values can contain "-" themselves, so they are shown as written). Since WP Rocket 3.24
+		// a sub-key of an array cookie the visitor did not send still adds a bare "-".
 		if ( '' !== $rest ) {
-			$parts[] = __( 'dynamic cookie', 'processing-wp-rocket' );
+			$value = trim( substr( $rest, 1 ), '-' );
+			/* translators: %s: cookie value(s) that WP Rocket put in the cache file name */
+			$parts[] = sprintf( __( 'dynamic cookie: %s', 'processing-wp-rocket' ), '' === $value ? __( '(not set)', 'processing-wp-rocket' ) : $value );
 		}
 		return implode( ' · ', $parts );
 	}

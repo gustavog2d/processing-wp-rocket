@@ -13,7 +13,7 @@ A diagnostic companion for **WP Rocket** that visualizes processing information 
 - **Environment Checklist**: `WP_CACHE`, WP Rocket's `advanced-cache.php` drop-in, cache config file, writable cache folders, `.htaccess` rules, license, preload and overdue Action Scheduler actions
 - **[file] column**: whether the cache file actually exists on disk right now (desktop and mobile) and its age; the `[cache]` column is only the preload queue status
 - **Inspect URL**: cache files on disk, the optimizations WP Rocket actually applied to the page (read from its `data-wpr-features` meta tag) compared with the enabled settings, per-post exclusions, and error details for each queue
-- **Error messages** from WP Rocket's tables (e.g. Remove Unused CSS SaaS errors) under each failed status
+- **Error messages** from WP Rocket's tables (e.g. Remove Unused CSS SaaS errors) under each failed status. WP Rocket appends every failed attempt to the same column; the plugin groups repeated attempts ("500 · To Submit request failed × 48 · 05:02 → 05:16"), highlights the last one and warns when the same failure is recorded several times in the same second, which points to several cron runners (e.g. several servers) processing the queue at once
 - **Unified table view** with search and filters, including an **exact match** toggle for finding a single URL (e.g. the home page) without substring noise
 - **Site Health panel** at the top of the screen showing the percentage of URLs Pending/In Progress/Completed/Failed for each layer (cache, RUCSS, lazy render, priority elements)
 - **Cron Status panel** showing the Action Scheduler backlog per group (pending, running, overdue), Action Scheduler history per hook (last 7 days) and WP Rocket's native WP-Cron hooks (next run, overdue flag)
@@ -109,6 +109,7 @@ The plugin shows one row per URL with the per‑layer status (cache, Used CSS, l
 - `pwr_cron_hook_pattern` — substring used to auto-detect WP Rocket's cron hooks and Action Scheduler actions (default `rocket`).
 - `pwr_cron_window_days` — how many days of Action Scheduler history to aggregate per hook (default `7`).
 - `pwr_cron_past_due_grace` — seconds after its scheduled time before a pending Action Scheduler action counts as overdue (default `10 * MINUTE_IN_SECONDS`).
+- `pwr_inspect_allowed_hosts` — hosts whose cache folders the Inspect URL panel may read (default: this site's home and site URL hosts).
 - `pwr_inspect_max_bytes` — maximum bytes read from a cache file when inspecting a URL (default `8 * MB_IN_BYTES`).
 
 ---
@@ -126,6 +127,12 @@ The plugin shows one row per URL with the per‑layer status (cache, Used CSS, l
 ---
 
 ## 🚀 Changelog (excerpt)
+
+### 2.3.0
+- **Readable error log**: repeated SaaS failures are grouped ("500 · To Submit request failed × 48 · 05:02 → 05:16"), the last one is highlighted and a warning flags parallel cron runners.
+- **WP Rocket 3.24**: pages cached only under dynamic-cookie file names (such as Polylang's language cookie) are recognized, with the cookie value shown per variant.
+- **Compatibility**: WP Rocket tables with mixed collations, and hosts that handle page caching themselves. Tested up to WordPress 7.1.
+- **Security hardening**: the Inspect URL panel only reads this site's cache folders and stays inside WP Rocket's cache folder; bounded parsing of cached files; nonce on refresh links.
 
 ### 2.2.0
 - Added an **Environment Checklist**, a **[file]** column, an **Inspect URL** panel and **error messages** from WP Rocket's tables.

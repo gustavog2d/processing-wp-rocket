@@ -21,11 +21,27 @@ class PWR_Environment {
 		$checks   = [];
 		$checks[] = self::check( 'wp_rocket', __( 'WP Rocket', 'processing-wp-rocket' ), self::INFO, sprintf( /* translators: %s: WP Rocket version */ __( 'Version %s active.', 'processing-wp-rocket' ), PWR_WPRocket_Adapter::version() ) );
 		$checks[] = self::license();
-		$checks[] = self::wp_cache_constant();
-		$checks[] = self::advanced_cache();
-		$checks[] = self::config_file();
-		$checks[] = self::writable_dirs();
-		$checks[] = self::server_rules();
+		if ( PWR_WPRocket_Adapter::host_handles_page_cache() ) {
+			// Managed host: WP Rocket deliberately skips WP_CACHE, advanced-cache.php, the config file,
+			// cache files and .htaccess rules, so those checks would only raise false alarms.
+			$host     = PWR_WPRocket_Adapter::host_name();
+			$checks[] = self::check(
+				'host_cache',
+				__( 'Page cache', 'processing-wp-rocket' ),
+				self::INFO,
+				'' !== $host
+					/* translators: %s: host identifier, e.g. "wpengine" */
+					? sprintf( __( 'Handled by the hosting (%s). WP Rocket only optimizes the HTML here and writes no cache files, so WP_CACHE, advanced-cache.php, the cache config file and the [file] column do not apply.', 'processing-wp-rocket' ), $host )
+					: __( 'Handled by the hosting. WP Rocket only optimizes the HTML here and writes no cache files, so WP_CACHE, advanced-cache.php, the cache config file and the [file] column do not apply.', 'processing-wp-rocket' )
+			);
+			$checks[] = self::writable_dirs();
+		} else {
+			$checks[] = self::wp_cache_constant();
+			$checks[] = self::advanced_cache();
+			$checks[] = self::config_file();
+			$checks[] = self::writable_dirs();
+			$checks[] = self::server_rules();
+		}
 		$checks[] = self::preload();
 		$checks[] = self::queue_backlog();
 		return array_values( array_filter( $checks ) );
@@ -87,7 +103,7 @@ class PWR_Environment {
 		$host  = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
 		$found = glob( $dir . $host . '*.php' );
 		if ( empty( $found ) ) {
-			return self::check( 'config_file', $label, self::ERROR, sprintf( /* translators: %s: expected file path */ __( '%s not found. advanced-cache.php needs it to decide what can be cached; saving WP Rocket settings regenerates it.', 'processing-wp-rocket' ), $dir . $host . '.php' ) );
+			return self::check( 'config_file', $label, self::ERROR, sprintf( /* translators: %s: expected file path */ __( '%s not found. advanced-cache.php needs it to decide what can be cached; saving WP Rocket settings regenerates it.', 'processing-wp-rocket' ), str_replace( WP_CONTENT_DIR, 'wp-content', $dir . $host . '.php' ) ) );
 		}
 		return self::check( 'config_file', $label, self::OK, sprintf( /* translators: %s: file name(s) */ __( 'Found: %s', 'processing-wp-rocket' ), implode( ', ', array_map( 'basename', $found ) ) ) );
 	}
